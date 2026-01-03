@@ -1,60 +1,58 @@
-import * as React from 'react';
-import {
-  Card,
-  CardMedia,
-  CardContent,
-  Typography,
-  IconButton,
-  Box,
-  Button,
-  Stack
-} from '@mui/material';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import StarIcon from '@mui/icons-material/Star';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Heart, Star, Banknote } from 'lucide-react'; // Thay Banknote
 import { getCookie } from '../../helpers/cookies.helper';
 import { addFavoritePlace, removeFavoritePlace, checkFavoritePlace } from '../../services/favorite.services';
-import FavoriteIcon from '@mui/icons-material/Favorite';
 
 const SpotCard = ({ spot, isFavorite: isFavoriteProp, onToggleFavorite }) => {
   const navigate = useNavigate();
-  // Controlled if parent provides isFavoriteProp; otherwise local state and optional backend check
-  const [isFavorite, setIsFavorite] = React.useState(
+  const [isFavorite, setIsFavorite] = useState(
     typeof isFavoriteProp === 'boolean' ? isFavoriteProp : false
   );
 
-  React.useEffect(() => {
-    // If parent passes isFavoriteProp, keep local state in sync
+  useEffect(() => {
     if (typeof isFavoriteProp === 'boolean') {
       setIsFavorite(isFavoriteProp);
       return;
     }
-
-    // Otherwise, perform a one-time check with backend (only if user logged in)
     let mounted = true;
     const userStr = getCookie('user');
     if (!userStr) return;
     try {
       const user = JSON.parse(userStr);
-      const userId = user._id;
       (async () => {
         try {
-          const res = await checkFavoritePlace(userId, spot._id || spot.id);
-          if (mounted && res && res.data && typeof res.data.is_favorite !== 'undefined') {
+          const res = await checkFavoritePlace(user._id, spot._id || spot.id);
+          if (mounted && res?.data?.is_favorite !== undefined) {
             setIsFavorite(!!res.data.is_favorite);
           }
-        } catch (err) {
-          // ignore
-        }
+        } catch (err) {}
       })();
-    } catch (e) {
-      // invalid user cookie
-    }
+    } catch (e) {}
     return () => { mounted = false };
   }, [spot, isFavoriteProp]);
 
-  const handleDetailClick = () => {
-    navigate(`/places/${spot._id}`);
+  const handleFavoriteClick = async (e) => {
+    e.stopPropagation();
+    const userStr = getCookie('user');
+    if (!userStr) {
+      navigate('/login');
+      return;
+    }
+    const user = JSON.parse(userStr);
+    try {
+      if (isFavorite) {
+        await removeFavoritePlace(user._id, spot._id || spot.id);
+        setIsFavorite(false);
+        if (onToggleFavorite) onToggleFavorite(false, spot);
+      } else {
+        await addFavoritePlace(user._id, spot._id || spot.id);
+        setIsFavorite(true);
+        if (onToggleFavorite) onToggleFavorite(true, spot);
+      }
+    } catch (err) {
+      console.error('Favorite toggle error', err);
+    }
   };
 
   const getImageUrl = () => {
@@ -63,134 +61,63 @@ const SpotCard = ({ spot, isFavorite: isFavoriteProp, onToggleFavorite }) => {
       const firstImage = spot.images[0];
       return typeof firstImage === 'string' ? firstImage : firstImage.url;
     }
-    return 'https://via.placeholder.com/250x160?text=No+Image';
+    return 'https://via.placeholder.com/300x200?text=No+Image';
   };
 
   return (
-    <Card
-      sx={{
-        width: 348,
-        height: 400, // Đảm bảo card chiếm toàn bộ chiều cao
-        display: 'flex',
-        flexDirection: 'column',
-        boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-        borderRadius: 2,
-        transition: 'transform 0.2s',
-        '&:hover': {
-          transform: 'translateY(-4px)',
-          boxShadow: '0 8px 16px rgba(0,0,0,0.12)'
-        }
-      }}
+    <div 
+      onClick={() => navigate(`/places/${spot._id}`)}
+      className="w-full h-[420px] bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#000] transition-all cursor-pointer flex flex-col group"
     >
-      {/* Ảnh */}
-      <CardMedia
-        component="img"
-        height="160"
-        image={getImageUrl()}
-        alt={spot.name || '名称未設定'}
-        sx={{ objectFit: 'cover' }}
-      />
+      {/* 1. Image Section */}
+      <div className="h-48 w-full relative border-b-2 border-black overflow-hidden bg-gray-100">
+        <img 
+          src={getImageUrl()} 
+          alt={spot.name} 
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+        <button
+          onClick={handleFavoriteClick}
+          className="absolute top-2 right-2 p-2 bg-white border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] hover:bg-red-50 active:translate-y-[1px] active:shadow-none transition-all z-10"
+        >
+          <Heart 
+            size={20} 
+            className={isFavorite ? "fill-red-500 text-red-500" : "text-black"} 
+          />
+        </button>
+        {spot.rating > 0 && (
+          <div className="absolute bottom-2 left-2 bg-[#FDE24F] border-2 border-black px-2 py-0.5 rounded flex items-center gap-1 shadow-sm">
+            <Star size={14} className="fill-black text-black" />
+            <span className="text-xs font-black">{Number(spot.rating).toFixed(1)}</span>
+          </div>
+        )}
+      </div>
 
-      {/* Nội dung */}
-      <CardContent
-        sx={{
-          flexGrow: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between', // Đảm bảo nút nằm dưới
-          p: 2
-        }}
-      >
-        {/* Tên + Tim */}
-        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-          <Typography
-            variant="subtitle1"
-            fontWeight={700}
-            sx={{
-              lineHeight: 1.3,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              display: '-webkit-box',
-              WebkitLineClamp: '2',
-              WebkitBoxOrient: 'vertical',
-              mr: 1
-            }}
-          >
-            {spot.name || '名称未設定のスポット'}
-          </Typography>
-          <IconButton
-            size="small"
-            sx={{ p: 0.5, mt: -0.5 }}
-            aria-label="お気に入り"
-            onClick={async (e) => {
-              e.stopPropagation();
-              const userStr = getCookie('user');
-              if (!userStr) {
-                navigate('/login');
-                return;
-              }
-              const user = JSON.parse(userStr);
-              try {
-                if (isFavorite) {
-                  await removeFavoritePlace(user._id, spot._id || spot.id);
-                  setIsFavorite(false);
-                  if (typeof onToggleFavorite === 'function') onToggleFavorite(false, spot);
-                } else {
-                  await addFavoritePlace(user._id, spot._id || spot.id);
-                  setIsFavorite(true);
-                  if (typeof onToggleFavorite === 'function') onToggleFavorite(true, spot);
-                }
-              } catch (err) {
-                console.error('Favorite toggle error', err);
-              }
-            }}
-          >
-            {isFavorite ? <FavoriteIcon fontSize="small" color="error" /> : <FavoriteBorderIcon fontSize="small" />}
-          </IconButton>
-        </Stack>
+      {/* 2. Content Section */}
+      <div className="flex-1 p-4 flex flex-col">
+        <h3 className="text-lg font-black leading-tight mb-1 line-clamp-2 min-h-[3rem]">
+          {spot.name || '名称未設定'}
+        </h3>
 
-        {/* Rating */}
-        <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1 }}>
-          <StarIcon sx={{ color: 'gold', fontSize: 18 }} />
-          <Typography variant="body2" fontWeight={600}>
-            {spot.rating || 0}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">
-            ({spot.total_reviews || 0} レビュー)
-          </Typography>
-        </Stack>
+        <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-3">
+          <span className="bg-green-100 px-2 py-1 rounded border border-green-300 text-black flex items-center gap-1 text-base">
+            <Banknote size={16} className="text-green-700"/> 
+            {spot.price_range || 'Contact'}
+          </span>
+          <span>{spot.total_reviews || 0} 評価</span>
+        </div>
 
-        {/* Giá + Mô tả */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="primary" fontWeight={500} sx={{ mb: 0.5 }}>
-            💰 {spot.price_range || '詳細はお問い合わせください'}
-          </Typography>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.4 }}>
-            {spot.description
-              ? spot.description.length > 50
-                ? spot.description.slice(0, 50) + '...'
-                : spot.description
-              : ''}
-          </Typography>
-        </Box>
+        <p className="text-sm text-gray-600 line-clamp-2 mb-4 flex-grow">
+          {spot.description || 'No description available.'}
+        </p>
 
-        {/* Nút chi tiết */}
-        <Button
-          variant="outlined"
-          size="small"
-          fullWidth
-          onClick={handleDetailClick}
-          sx={{
-            textTransform: 'none',
-            fontWeight: 600,
-            borderRadius: 2,
-            mt: 'auto' // Đẩy nút xuống cuối
-          }}
+        <button 
+          className="w-full py-2 bg-[#FDE24F] border-2 border-black rounded-lg font-bold text-black shadow-[2px_2px_0_0_#000] hover:bg-[#FCE040] active:translate-x-[1px] active:translate-y-[1px] active:shadow-none transition-all mt-auto"
         >
           詳細を見る
-        </Button>
-      </CardContent>
-    </Card>
+        </button>
+      </div>
+    </div>
   );
 };
 
