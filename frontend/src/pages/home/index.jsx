@@ -117,7 +117,8 @@ function Home() {
   const images = useMemo(() => {
     const modules = import.meta.glob('../../assets/images/*.{png,jpg,jpeg,webp,gif}', {
       eager: true,
-      as: 'url'
+      query: '?url',
+      import: 'default'
     })
     const list = Object.values(modules)
     // Lấy tối đa 4 ảnh đầu tiên

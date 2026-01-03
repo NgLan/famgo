@@ -4,7 +4,6 @@ import axios from "axios";
 import {
   Box,
   Container,
-  Grid,
   Typography,
   Stack,
   Divider,
@@ -140,27 +139,103 @@ const PlaceDetail = () => {
 
   return (
     <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 4 }}>
-      <Container maxWidth="xl" sx={{ ml: 6 }}>
+      <Container maxWidth="xl" sx={{ px: { xs: 2, md: 4 } }}>
         {/* Mục 1: Tiêu đề và Rating */}
-        <Stack direction="row" alignItems="flex-end" spacing={2} sx={{ mb: 2 }}>
+        <Stack spacing={1} sx={{ mb: 3 }}>
+          {/* Tên địa điểm */}
           <Typography variant="h4" fontWeight={700}>
             {name}
           </Typography>
+
+          {/* Đánh giá sao và địa chỉ cùng hàng */}
+          <Stack direction="row" alignItems="center" flexWrap="wrap" gap={2}>
+            {/* Xếp hạng sao */}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                {rating > 0 ? (
+                  <>
+                    {[...Array(5)].map((_, index) => (
+                      <StarIcon
+                        key={index}
+                        sx={{
+                          fontSize: 24,
+                          color: index < Math.round(rating) ? "#FFD700" : "#E0E0E0",
+                        }}
+                      />
+                    ))}
+                  </>
+                ) : (
+                  <Typography variant="body2" color="text.secondary">
+                    評価なし
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="body1" fontWeight={600}>
+                {rating > 0 ? Number(rating).toFixed(1) : "N/A"}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                ({total_reviews || 0} レビュー)
+              </Typography>
+            </Stack>
+
+            {/* Địa chỉ */}
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <LocationOnIcon sx={{ color: "#666", fontSize: 20 }} />
+              <Typography variant="body1" color="text.secondary">
+                {address || "住所情報なし"}
+              </Typography>
+            </Stack>
+          </Stack>
         </Stack>
 
         {/* 2. Body - Chia 2 cột */}
-        <Grid container spacing={3}>
-          {/* Cột Trái (2/3) */}
-          <Grid item xs={12} md={8}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: 3,
+            alignItems: "flex-start",
+          }}
+        >
+          {/* Cột Trái - Nội dung chính */}
+          <Box sx={{ flex: 1, minWidth: 0 }}>
             {/* Mục 3: Main Image / Gallery */}
-            <Paper
+            <Box
               sx={{
-                height: 450,
+                position: "relative",
+                width: "100%",
+                height: { xs: "auto", md: 420 },
+                maxHeight: { xs: 520, md: 420 },
                 borderRadius: 3,
                 overflow: "hidden",
-                position: "relative",
+                backgroundColor: { xs: "#fff", md: "#f5f5f5" },
+                display: { xs: "flex", md: "block" },
+                alignItems: { xs: "center", md: "initial" },
+                justifyContent: { xs: "center", md: "initial" },
               }}
             >
+              {/* Background blur - Only desktop */}
+              <Box
+                component="img"
+                src={
+                  images && images.length > 0
+                    ? images[0].url
+                    : "https://via.placeholder.com/800x450?text=Gallery+Placeholder"
+                }
+                sx={{
+                  display: { xs: "none", md: "block" },
+                  position: "absolute",
+                  inset: 0,
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  filter: "blur(20px)",
+                  transform: "scale(1.1)",
+                  opacity: 0.5,
+                }}
+              />
+
+              {/* Main image */}
               <Box
                 component="img"
                 src={
@@ -169,9 +244,18 @@ const PlaceDetail = () => {
                     : "https://via.placeholder.com/800x450?text=Gallery+Placeholder"
                 }
                 alt={name}
-                sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+                sx={{
+                  position: { xs: "static", md: "relative" },
+                  zIndex: { xs: 0, md: 1 },
+                  maxWidth: "100%",
+                  width: { xs: "auto", md: "100%" },
+                  height: { xs: "auto", md: "100%" },
+                  maxHeight: { xs: "100%", md: "100%" },
+                  objectFit: "contain",
+                  display: "block",
+                }}
               />
-            </Paper>
+            </Box>
 
             <Box sx={{ mt: 3 }}>
               {/* Mục 5: Chi tiết & Mô tả */}
@@ -224,10 +308,18 @@ const PlaceDetail = () => {
               {/* Comment input + list comments */}
               <CommentSection placeId={id} placeName={name} />
             </Box>
-          </Grid>
+          </Box>
 
-          {/* Cột Phải (1/3) */}
-          <Grid item xs={12} md={4}>
+          {/* Cột Phải - Sidebar Sticky */}
+          <Box
+            sx={{
+              width: { xs: "100%", md: 360 },
+              flexShrink: 0,
+              position: { xs: "static", md: "sticky" },
+              top: { md: 96 },
+              alignSelf: "flex-start",
+            }}
+          >
             <Stack spacing={3}>
               {/* Mục 4: Thông tin cơ bản & Ticket/Add Favorite */}
               <Paper
@@ -333,7 +425,7 @@ const PlaceDetail = () => {
                           location.coordinates[0],
                         ]}
                         zoom={14}
-                        style={{ height: "80%", width: "100%" }}
+                        style={{ height: "100%", width: "100%" }}
                         key={location.coordinates[0]}
                       >
                         <TileLayer
@@ -370,54 +462,132 @@ const PlaceDetail = () => {
                   )}
                 </Box>
               </Box>
-
-              {/* Mục 9: Địa điểm liên quan */}
-              <Box>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                  関連スポット
-                </Typography>
-                <Stack spacing={2}>
-                  {related_places?.map((place) => (
-                    <Paper
-                      key={place._id}
-                      sx={{
-                        p: 2,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "#f0f0f0" },
-                      }}
-                      // SỬA LỖI ĐIỀU HƯỚNG TẠI ĐÂY: Dùng template literal (backticks `)
-                      onClick={() => navigate(`/places/${place._id}`)}
-                    >
-                      <Stack direction="row" spacing={2} alignItems="center">
-                        <Box
-                          component="img"
-                          src={
-                            place.thumbnail ||
-                            "https://via.placeholder.com/60x60"
-                          }
-                          sx={{
-                            width: 60,
-                            height: 60,
-                            objectFit: "cover",
-                            borderRadius: 1,
-                          }}
-                        />
-                        <Box>
-                          <Typography variant="subtitle2" fontWeight={600}>
-                            {place.name}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {place.price_range}
-                          </Typography>
-                        </Box>
-                      </Stack>
-                    </Paper>
-                  ))}
-                </Stack>
-              </Box>
             </Stack>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
+
+        {/* Mục: Địa điểm liên quan - FULL WIDTH */}
+        <Box sx={{ mt: 6 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 3 }}>
+            関連スポット
+          </Typography>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(1, 1fr)",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(4, 1fr)",
+                lg: "repeat(5, 1fr)",
+              },
+              gap: 2.5,
+            }}
+          >
+            {related_places?.slice(0, 5).map((place) => (
+              <Paper
+                key={place._id}
+                sx={{
+                  height: 340,
+                  display: "flex",
+                  flexDirection: "column",
+                  borderRadius: 2,
+                  overflow: "hidden",
+                  cursor: "pointer",
+                  transition: "0.3s",
+                  "&:hover": {
+                    transform: "translateY(-4px)",
+                    boxShadow: "0 10px 24px rgba(0,0,0,0.15)",
+                  },
+                }}
+                onClick={() => navigate(`/places/${place._id}`)}
+              >
+                <Box
+                  component="img"
+                  src={
+                    place.thumbnail ||
+                    "https://via.placeholder.com/200x150"
+                  }
+                  alt={place.name}
+                  sx={{
+                    width: "100%",
+                    aspectRatio: "4 / 3",
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                />
+                <Box
+                  sx={{
+                    p: 2,
+                    flexGrow: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    minHeight: 0,
+                    overflow: "hidden",
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    fontWeight={600}
+                    sx={{
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      display: "-webkit-box",
+                      WebkitLineClamp: 2,
+                      WebkitBoxOrient: "vertical",
+                      mb: 1,
+                    }}
+                  >
+                    {place.name}
+                  </Typography>
+
+                  {/* Đánh giá sao */}
+                  <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1 }}>
+                    <Box sx={{ display: "flex", alignItems: "center" }}>
+                      {place.rating > 0 ? (
+                        <>
+                          {[...Array(5)].map((_, index) => (
+                            <StarIcon
+                              key={index}
+                              sx={{
+                                fontSize: 14,
+                                color:
+                                  index < Math.round(place.rating)
+                                    ? "#FFD700"
+                                    : "#E0E0E0",
+                              }}
+                            />
+                          ))}
+                        </>
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">
+                          評価なし
+                        </Typography>
+                      )}
+                    </Box>
+                    {place.rating > 0 && (
+                      <Typography variant="caption" color="text.secondary">
+                        {Number(place.rating).toFixed(1)}
+                      </Typography>
+                    )}
+                  </Stack>
+
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{
+                      mt: "auto",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {place.price_range}
+                  </Typography>
+                </Box>
+              </Paper>
+            ))}
+          </Box>
+        </Box>
 
         {/* Review Dialog */}
         <ReviewDialog

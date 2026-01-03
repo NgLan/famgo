@@ -195,12 +195,12 @@ function Profile() {
           <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
             {/* Left Sidebar - 3 parts */}
             <Grid item xs={12} md={3} sx={{ display: 'flex' }}>
-              <Card sx={{ 
-                p: 3, 
-                position: 'sticky', 
-                top: 20, 
-                width: '100%', 
-                display: 'flex', 
+              <Card sx={{
+                p: 3,
+                position: 'sticky',
+                top: 20,
+                width: '100%',
+                display: 'flex',
                 flexDirection: 'column',
                 minHeight: 'calc(100vh - 80px)',
                 maxHeight: 'calc(100vh - 80px)'
@@ -283,7 +283,7 @@ function Profile() {
             </Grid>
 
             {/* Right Content Area - 9 parts */}
-            <Grid item xs={12} md={9} sx={{flex:1}}>
+            <Grid item xs={12} md={9} sx={{ flex: 1 }}>
               <Grid container spacing={3} alignItems="stretch" alignContent="stretch">
                 {(activeTab === 'favorites' ? favoriteSpots : favoritePlans).map((item) => (
                   <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center' }}>
@@ -303,7 +303,7 @@ function Profile() {
                         }
                       }}
                     >
-                    
+
                       <CardMedia
                         component="div"
                         sx={{
@@ -327,7 +327,7 @@ function Profile() {
                         <Box>
                           {/* --- HEADER: TIÊU ĐỀ + NÚT TIM (Dùng Flexbox) --- */}
                           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                            
+
                             {/* Tiêu đề */}
                             <Typography
                               variant="h6"
@@ -357,22 +357,22 @@ function Profile() {
                               >
                                 <FavoriteIcon color="error" />
                               </IconButton>
-                              
+
                               {/* Số lượng (Likes) nằm dưới tim */}
 
                               {activeTab !== 'favorites' && (
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: '0.7rem', 
-                                  color: 'text.secondary', 
-                                  textAlign: 'center',
-                                  lineHeight: 1
-                                }}
-                              >
-                                {/* Bạn có thể dùng hàm replace để chỉ lấy số nếu muốn gọn: item.reviews.replace(/\D/g,'') */}
-                                {item.total_likes ? item.total_likes : '0'}
-                              </Typography>
+                                <Typography
+                                  variant="caption"
+                                  sx={{
+                                    fontSize: '0.7rem',
+                                    color: 'text.secondary',
+                                    textAlign: 'center',
+                                    lineHeight: 1
+                                  }}
+                                >
+                                  {/* Bạn có thể dùng hàm replace để chỉ lấy số nếu muốn gọn: item.reviews.replace(/\D/g,'') */}
+                                  {item.total_likes ? item.total_likes : '0'}
+                                </Typography>
                               )}
 
                             </Box>
@@ -380,86 +380,85 @@ function Profile() {
 
                           {/* Rating */}
                           {activeTab === 'favorites' && (
-                          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1, mt: 2 }}>
-                          <StarIcon sx={{ color: 'gold', fontSize: 18 }} />
-                          <Typography variant="body2" fontWeight={600}>
-                            {item.rating != null ? Number(item.rating).toFixed(1) : '0'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
-                            ({item.reviews || 0})
-                          </Typography>
-                          </Stack>
+                            <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1, mt: 2 }}>
+                              <StarIcon sx={{ color: 'gold', fontSize: 18 }} />
+                              <Typography variant="body2" fontWeight={600}>
+                                {item.rating != null ? Number(item.rating).toFixed(1) : '0'}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
+                                ({item.reviews || 0})
+                              </Typography>
+                            </Stack>
                           )}
-                  
+
                           {/* Giá + Mô tả */}
                           {activeTab === 'favorites' && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="primary" fontWeight={500} sx={{ mb: 0.5 }}>
-                              💰 {item.price_range || 'Liên hệ'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" 
-                              sx={{ 
-                                display: 'block', 
-                                lineHeight: 1.4, 
-                                mt: 1, 
-                                mb: 2,
+                            <Box sx={{ mb: 2 }}>
+                              <Typography variant="body2" color="primary" fontWeight={500} sx={{ mb: 0.5 }}>
+                                💰 {item.price_range || 'Liên hệ'}
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary"
+                                sx={{
+                                  lineHeight: 1.4,
+                                  mt: 1,
+                                  mb: 2,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  display: '-webkit-box',
+                                  WebkitLineClamp: 2,
+                                  WebkitBoxOrient: 'vertical',
+                                  wordBreak: 'break-word',
+                                  minHeight: '3rem'
+                                }}>
+                                <strong>Mô tả:</strong> {item.description
+                                  ? item.description.length > 50
+                                    ? item.description.slice(0, 50) + '...'
+                                    : item.description
+                                  : ''}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {activeTab !== 'favorites' && (
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              gutterBottom
+                              sx={{
+                                mb: 1,
+                                mt: 2,
                                 overflow: 'hidden',
-                                textOverflow: 'ellipsis', 
+                                textOverflow: 'ellipsis',
                                 display: '-webkit-box',
                                 WebkitLineClamp: 2,
                                 WebkitBoxOrient: 'vertical',
                                 wordBreak: 'break-word',
-                                minHeight: '3rem' 
+                                minHeight: '3rem'
                               }}>
-                              <strong>Mô tả:</strong> {item.description
-                                ? item.description.length > 50
-                                  ? item.description.slice(0, 50) + '...'
-                                  : item.description
-                                : ''}
+                              <strong>Địa điểm:</strong> {item.places.map(p => p.name || p.title).join(', ')}
                             </Typography>
-                          </Box>
-                          )}
-                      
-                          {activeTab !== 'favorites' && (
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            gutterBottom 
-                            sx={{ 
-                              mb: 1, 
-                              mt: 2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis', 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              wordBreak: 'break-word',
-                              minHeight: '3rem'
-                            }}>
-                            <strong>Địa điểm:</strong> {item.places.map(p => p.name || p.title).join(', ')}
-                          </Typography>
                           )}
 
                           {activeTab !== 'favorites' && (
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            gutterBottom 
-                            sx={{ 
-                              mb: 2, 
-                              mt: 1,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis', 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              wordBreak: 'break-word',
-                              minHeight: '3rem'
-                            }}>
-                            <strong>Mô tả:</strong> {item.description}
-                          </Typography>
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              gutterBottom
+                              sx={{
+                                mb: 2,
+                                mt: 1,
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                wordBreak: 'break-word',
+                                minHeight: '3rem'
+                              }}>
+                              <strong>Mô tả:</strong> {item.description}
+                            </Typography>
                           )}
-                        </Box>  
+                        </Box>
 
                         {/* Detail Button */}
                         <Button
@@ -507,21 +506,21 @@ function Profile() {
                           sx={
                             item === page
                               ? {
-                                  minWidth: 40,
-                                  height: 36,
-                                  borderRadius: 2,
-                                  px: 1.5,
-                                  bgcolor: 'primary.main',
-                                  color: 'common.white',
-                                  boxShadow: 3,
-                                  '&:hover': { bgcolor: 'primary.dark' }
-                                }
+                                minWidth: 40,
+                                height: 36,
+                                borderRadius: 2,
+                                px: 1.5,
+                                bgcolor: 'primary.main',
+                                color: 'common.white',
+                                boxShadow: 3,
+                                '&:hover': { bgcolor: 'primary.dark' }
+                              }
                               : {
-                                  minWidth: 34,
-                                  height: 32,
-                                  color: 'primary.main',
-                                  '&:hover': { bgcolor: 'transparent' }
-                                }
+                                minWidth: 34,
+                                height: 32,
+                                color: 'primary.main',
+                                '&:hover': { bgcolor: 'transparent' }
+                              }
                           }
                         >
                           {item}
@@ -544,20 +543,20 @@ function Profile() {
               {/* Empty State */}
               {((activeTab === 'favorites' && favoriteSpots.length === 0) ||
                 (activeTab === 'plans' && favoritePlans.length === 0)) && (
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    py: 8,
-                    bgcolor: 'white',
-                    borderRadius: 2
-                  }}
-                >
-                  <FavoriteBorderIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary">
-                    お気に入りがまだありません
-                  </Typography>
-                </Box>
-              )}
+                  <Box
+                    sx={{
+                      textAlign: 'center',
+                      py: 8,
+                      bgcolor: 'white',
+                      borderRadius: 2
+                    }}
+                  >
+                    <FavoriteBorderIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary">
+                      お気に入りがまだありません
+                    </Typography>
+                  </Box>
+                )}
             </Grid>
           </Grid>
         </Container>
