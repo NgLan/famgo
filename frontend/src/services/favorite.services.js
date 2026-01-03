@@ -4,8 +4,8 @@ export const getFavoritePlaces = async (user_id, page = 1, limit = 10) => {
   return await get(`favorites?user_id=${user_id}&page=${page}&limit=${limit}`);
 };
 
-export const getFavoritePlans = async (user_id) => {
-  return await get(`day-plans/favorites?user_id=${user_id}`);
+export const getFavoritePlans = async (user_id, page = 1, limit = 6) => {
+  return await get(`day-plans/favorites?user_id=${user_id}&page=${page}&limit=${limit}`);
 };
 
 export const addFavoritePlace = async (user_id, place_id) => {
@@ -22,7 +22,7 @@ export const checkFavoritePlace = async (user_id, place_id) => {
 };
 
 // Day-plan likes (favorites) APIs
-export const getFavoriteDayPlans = async (user_id, page = 1, limit = 10) => {
+export const getFavoriteDayPlans = async (user_id, page = 1, limit = 6) => {
   return await get(`day-plans/favorites?user_id=${user_id}&page=${page}&limit=${limit}`);
 };
 
