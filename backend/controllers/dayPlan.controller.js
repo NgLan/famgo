@@ -413,7 +413,7 @@ module.exports.detail = async (req, res) => {
 // ============ LẤY DANH SÁCH KẾ HOẠCH YÊU THÍCH ============
 module.exports.getFavoriteDayPlans = async (req, res) => {
   try {
-    const { user_id, page = 1, limit = 10 } = req.query;
+    const { user_id, page = 1, limit = 6 } = req.query;
 
     if (!user_id) {
       return res.status(400).json({
