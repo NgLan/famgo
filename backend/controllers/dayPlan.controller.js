@@ -382,12 +382,16 @@ const formatPrice = (priceRange) => {
 };
 
 // GET /api/day-plans/:id - Lấy chi tiết day plan
+// GET /api/day-plans/:id - Lấy chi tiết day plan
 module.exports.detail = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get day plan without populate to get raw data
-    const dayPlan = await DayPlan.findById(id).lean();
+    // SỬA: Thêm .populate() để lấy thông tin user và place chi tiết
+    const dayPlan = await DayPlan.findById(id)
+      .populate("user_id", "fullName avatar") // <--- Quan trọng: Lấy tên và avatar user
+      .populate("items.place_id", "name images address") // <--- Lấy thêm thông tin địa điểm cho chắc
+      .lean();
 
     if (!dayPlan) {
       return res.status(404).json({
@@ -395,6 +399,11 @@ module.exports.detail = async (req, res) => {
         message: "Không tìm thấy kế hoạch",
       });
     }
+
+    const totalLikes = await Like.countDocuments({ day_plan_id: dayPlan._id });
+    
+    // 3. Gắn số like vào kết quả trả về
+    dayPlan.likes = totalLikes;
 
     return res.status(200).json({
       success: true,

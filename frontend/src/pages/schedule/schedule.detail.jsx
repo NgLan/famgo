@@ -16,9 +16,11 @@ import {
   Tooltip,
   Typography,
   CircularProgress,
+  tooltipClasses, Zoom
 } from "@mui/material";
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import './schedule.detail.css';
 import L from 'leaflet';
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -39,7 +41,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import { getCookie } from '../../helpers/cookies.helper';
 import { likeDayPlan, unlikeDayPlan, checkLikeDayPlan } from '../../services/favorite.services';
-
+import { styled } from '@mui/material/styles';
 const API_BASE_URL = "http://localhost:3000/api";
 
 // Fix Leaflet default marker icon issue
@@ -50,35 +52,35 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component cho một điểm trên timeline (giao diện cũ)
+// Component cho một điểm trên timeline
 function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDesc, expandedNote, navigate }) {
   const timeLabel = location.startTime
     ? `${location.startTime}${location.endTime ? ` - ${location.endTime}` : ''}`
     : location.time || "時間未設定";
 
   return (
-    <Card sx={{ mb: 2, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-      <Box sx={{ position: "relative" }}>
+    <Card className="timeline-card">
+      <Box className="card-image-overlay">
+        {/* Bỏ thuộc tính height cứng, để CSS class .card-image-overlay quản lý chiều cao */}
         <CardMedia
           component="img"
-          height="180"
           image={location.image}
           alt={location.name}
-          sx={{ objectFit: "cover" }}
+          // CSS đã xử lý width 100% và object-fit cover
         />
         {location.hasWarning && (
           <Chip
             icon={<WarningAmberIcon />}
             label="注意"
             size="small"
-            color="warning"
+            className="chip-elevated-pink"
             sx={{ position: "absolute", top: 8, right: 8 }}
           />
         )}
       </Box>
       <CardContent>
         <Stack spacing={1.5}>
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" fontWeight={700} color="#2C3E50">
             {location.name}
           </Typography>
 
@@ -87,24 +89,29 @@ function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDes
               icon={<AccessTimeIcon />}
               label={timeLabel}
               size="small"
-              variant="outlined"
+              className="chip-elevated-blue"
             />
             <Chip
               icon={<AttachMoneyIcon />}
               label={location.estimatedCost}
               size="small"
-              variant="outlined"
-              color="success"
+              className="chip-elevated"
+              sx={{ color: '#2C3E50' }}
             />
           </Stack>
 
-          {/* 説明 */}
+          {/* ... (Phần Description, Note, Button giữ nguyên) ... */}
+           {/* 説明 */}
           <Box>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary" fontWeight={600}>
+              <Typography variant="body2" color="text.secondary" fontWeight={700}>
                 説明
               </Typography>
-              <IconButton size="small" onClick={() => onToggleDescription(location.id)}>
+              <IconButton 
+                size="small" 
+                onClick={() => onToggleDescription(location.id)}
+                className="icon-btn-elevated"
+              >
                 {expandedDesc ? <ExpandLessIcon /> : <ExpandMoreIcon />}
               </IconButton>
             </Stack>
@@ -117,20 +124,24 @@ function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDes
 
           {/* 注意事項 */}
           {location.note && (
-            <Box>
+            <Box className="warning-card" sx={{ p: 1.5, borderRadius: 2 }}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <WarningAmberIcon fontSize="small" color="warning" />
-                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                  <WarningAmberIcon fontSize="small" sx={{ color: '#FFB84D' }} />
+                  <Typography variant="body2" color="text.secondary" fontWeight={700}>
                     注意事項
                   </Typography>
                 </Stack>
-                <IconButton size="small" onClick={() => onToggleNote(location.id)}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => onToggleNote(location.id)}
+                  className="icon-btn-elevated"
+                >
                   {expandedNote ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                 </IconButton>
               </Stack>
               <Collapse in={expandedNote}>
-                <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                <Typography variant="body2" sx={{ mt: 1, color: '#D97706' }}>
                   {location.note}
                 </Typography>
               </Collapse>
@@ -138,9 +149,9 @@ function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDes
           )}
 
           <Button
-            variant="contained"
+            className="btn-primary"
             size="small"
-            sx={{ alignSelf: "flex-start", textTransform: "none" }}
+            sx={{ alignSelf: "flex-start" }}
             onClick={() => location.placeId && navigate(`/places/${location.placeId}`)}
           >
             詳細を見る
@@ -150,6 +161,29 @@ function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDes
     </Card>
   );
 }
+
+const CuteTooltip = styled(({ className, ...props }) => (
+  <Tooltip {...props} arrow classes={{ popper: className }} TransitionComponent={Zoom} />
+))(({ theme }) => ({
+  [`& .${tooltipClasses.tooltip}`]: {
+    backgroundColor: '#FFF9C4', // Màu nền Vàng kem
+    color: '#333333', // Chữ đen
+    border: '2px solid #FBC02D', // Viền vàng đậm
+    fontSize: '0.75rem',
+    borderRadius: '12px', // Bo tròn
+    fontWeight: 700,
+    padding: '8px 12px',
+    fontFamily: '"M PLUS Rounded 1c", "Kosugi Maru", sans-serif', // Font cute
+    boxShadow: '2px 2px 0px rgba(0,0,0,0.1)', // Bóng nhẹ
+    maxWidth: 200, // Giới hạn chiều rộng nếu text dài
+  },
+  [`& .${tooltipClasses.arrow}`]: {
+    color: '#FBC02D', // Mũi tên màu vàng đậm trùng màu viền
+    "&:before": {
+        border: '2px solid #FBC02D', // (Tuỳ chọn) Viền cho mũi tên nếu cần sắc nét hơn
+    }
+  },
+}));
 
 function ScheduleDetail() {
   const navigate = useNavigate();
@@ -171,7 +205,9 @@ function ScheduleDetail() {
       try {
         setLoading(true);
         const response = await axios.get(`${API_BASE_URL}/day-plans/${id}`);
-        
+        console.log("👉 Dữ liệu API trả về:", response.data.data); // Xem cái này
+console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái này
+
         if (response.data && response.data.data) {
           const rawData = response.data.data;
           
@@ -180,8 +216,10 @@ function ScheduleDetail() {
             id: rawData._id,
             title: rawData.title,
             user: {
-              name: "User", // Will be populated from user_id if needed
-              avatar: "",
+              // Ở trang list bạn dùng user.fullName, nên ở đây tui cũng map tương tự
+              // Thêm fallback user.name đề phòng backend trả về field khác
+              name: rawData.user_id?.fullName || rawData.user_id?.name || "Ẩn danh", 
+              avatar: rawData.user_id?.avatar || "",
             },
             overview: {
               price: calculateTotalPriceRange(rawData.items),
@@ -206,7 +244,7 @@ function ScheduleDetail() {
               description: item.description || "",
               note: item.caution || "",
               hasWarning: !!item.caution,
-              placeId: item.place_id, // Add place_id for navigation
+              placeId: item.place_id?._id || item.place_id,// Add place_id for navigation
             })),
             warnings: rawData.items
               .filter(item => item.caution)
@@ -218,9 +256,16 @@ function ScheduleDetail() {
           
           setScheduleData(transformedData);
           
+          if (typeof rawData.likes === 'number') {
+            setLikesCount(rawData.likes);
+          } else if (typeof rawData.total_likes === 'number') {
+             // Phòng hờ backend trả về tên biến khác
+            setLikesCount(rawData.total_likes);
+          }
+
           // Fetch related places
           const placeIds = rawData.items
-            .map(item => item.place_id)
+            .map(item => item.place_id?._id || item.place_id)
             .filter(placeId => placeId); // Filter out null/undefined
           
           if (placeIds.length > 0) {
@@ -399,15 +444,15 @@ function ScheduleDetail() {
   const getTransportIcon = (transport) => {
     switch (transport) {
       case "walk":
-        return <DirectionsWalkIcon sx={{ color: "#333", fontSize: 24 }} />;
+        return <DirectionsWalkIcon sx={{ color: "#fff", fontSize: 24 }} />;
       case "bus":
-        return <DirectionsBusIcon sx={{ color: "#333", fontSize: 24 }} />;
+        return <DirectionsBusIcon sx={{ color: "#fff", fontSize: 24 }} />;
       case "bike":
-        return <DirectionsBikeIcon sx={{ color: "#333", fontSize: 24 }} />;
+        return <DirectionsBikeIcon sx={{ color: "#fff", fontSize: 24 }} />;
       case "car":
-        return <DirectionsCarIcon sx={{ color: "#333", fontSize: 24 }} />;
+        return <DirectionsCarIcon sx={{ color: "#fff", fontSize: 24 }} />;
       default:
-        return <DirectionsWalkIcon sx={{ color: "#333", fontSize: 24 }} />;
+        return <DirectionsWalkIcon sx={{ color: "#fff", fontSize: 24 }} />;
     }
   };
 
@@ -415,15 +460,15 @@ function ScheduleDetail() {
   if (loading) {
     return (
       <Box
+        className="loading-container"
         sx={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
           minHeight: "100vh",
-          bgcolor: "#f5f5f5",
         }}
       >
-        <CircularProgress />
+        <CircularProgress sx={{ color: '#4A90E2' }} />
       </Box>
     );
   }
@@ -432,20 +477,19 @@ function ScheduleDetail() {
   if (error || !scheduleData) {
     return (
       <Box
+        className="schedule-detail-container"
         sx={{
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
-          minHeight: "100vh",
-          bgcolor: "#f5f5f5",
         }}
       >
-        <Paper sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="h6" color="error" gutterBottom>
+        <Paper className="elevated-card" sx={{ p: 4, textAlign: "center" }}>
+          <Typography variant="h6" color="error" gutterBottom fontWeight={700}>
             {error || "スケジュールが見つかりません"}
           </Typography>
           <Button
-            variant="contained"
+            className="btn-primary"
             onClick={() => navigate("/schedule")}
             sx={{ mt: 2 }}
           >
@@ -457,116 +501,103 @@ function ScheduleDetail() {
   }
 
   return (
-    <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 3 }}>
-      <Box sx={{ maxWidth: 1400, mx: "auto", px: 3 }}>
+    <Box className="detail-page-wrapper" sx={{ py: 3 }}>
+      <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, md: 4 } }}>
         {/* Header */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }}>
-          <Stack direction="row" alignItems="center" spacing={2}>
-            <IconButton onClick={() => navigate("/schedule")}>
-              <ArrowBackIcon />
-            </IconButton>
-            <Typography variant="h5" fontWeight={700}>
-              {scheduleData.title}
-            </Typography>
+        <Paper className="header-section" sx={{ mb: 3 }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between">
+            <Stack direction="row" alignItems="center" spacing={2}>
+              <IconButton 
+                onClick={() => navigate("/schedule")}
+                className="icon-btn-elevated"
+              >
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography variant="h5" fontWeight={700} color="#2C3E50">
+                {scheduleData.title}
+              </Typography>
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <IconButton
+                onClick={async () => {
+                  const userStr = getCookie('user');
+                  if (!userStr) {
+                    return navigate('/login');
+                  }
+                  const user = JSON.parse(userStr);
+                  try {
+                    if (liked) {
+                      await unlikeDayPlan(user._id, id);
+                      setLiked(false);
+                      setLikesCount((c) => Math.max(0, c - 1));
+                    } else {
+                      await likeDayPlan(user._id, id);
+                      setLiked(true);
+                      setLikesCount((c) => c + 1);
+                    }
+                  } catch (err) {
+                    console.error('Like toggle error', err);
+                  }
+                }}
+                className="icon-btn-elevated"
+                sx={{ color: liked ? "#FF6B9D" : "inherit" }}
+              >
+                {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+              </IconButton>
+              <Typography variant="body2" color="text.secondary" fontWeight={600}>{likesCount}</Typography>
+            </Stack>
           </Stack>
-                  <Stack direction="row" alignItems="center" spacing={1}>
-                    <IconButton
-                      onClick={async () => {
-                        const userStr = getCookie('user');
-                        if (!userStr) {
-                          return navigate('/login');
-                        }
-                        const user = JSON.parse(userStr);
-                        try {
-                          if (liked) {
-                            await unlikeDayPlan(user._id, id);
-                            setLiked(false);
-                            setLikesCount((c) => Math.max(0, c - 1));
-                          } else {
-                            await likeDayPlan(user._id, id);
-                            setLiked(true);
-                            setLikesCount((c) => c + 1);
-                          }
-                        } catch (err) {
-                          console.error('Like toggle error', err);
-                        }
-                      }}
-                      sx={{ color: liked ? "#f44336" : "inherit" }}
-                    >
-                      {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-                    </IconButton>
-                    <Typography variant="body2" color="text.secondary">{likesCount}</Typography>
-                  </Stack>
-        </Stack>
+        </Paper>
 
-        {/* Timeline Overview (giao diện cũ) */}
-        <Paper
-          sx={{
-            mb: 3,
-            p: 2,
-            overflowX: "auto",
-            bgcolor: "#ddd",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          }}
-        >
+        {/* Timeline Overview */}
+        <Paper className="timeline-overview" sx={{ mb: 3 }}>
           <Stack
             direction="row"
-            alignItems="center"
+            alignItems="flex-start" 
             spacing={0}
             sx={{
               minWidth: "max-content",
               position: "relative",
+              overflowX: "auto",
+              // --- SỬA LẠI: Trả về padding nhỏ gọn, không cần đệm cao nữa ---
+              pt: 2, // Giảm từ 8 xuống 2
+              pb: 2,
+              px: 2,
             }}
           >
             {scheduleData.timeline.map((item, index) => (
-              <Box key={item.id} sx={{ position: "relative", display: "flex", alignItems: "center" }}>
+              <Box key={item.id} sx={{ position: "relative", display: "flex", alignItems: "flex-start" }}>
+                
                 {/* Location Item */}
-                <Stack alignItems="center" spacing={0.5} sx={{ minWidth: 120, px: 1 }}>
-                  {/* Icon */}
-                  <Tooltip title={item.note || ""} arrow placement="top">
-                    <Box
-                      sx={{
-                        width: 56,
-                        height: 56,
-                        borderRadius: "50%",
-                        bgcolor: "#fff",
-                        border: "3px solid #1976d2",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                        cursor: item.note ? "pointer" : "default",
-                        "&:hover": {
-                          transform: item.note ? "scale(1.05)" : "none",
-                          transition: "transform 0.2s",
-                        },
-                      }}
-                    >
-                      <LocationOnIcon sx={{ color: "#1976d2", fontSize: 26 }} />
+                <Stack alignItems="center" spacing={0.5} sx={{ minWidth: 120, px: 1, position: 'relative' }}>
+                  
+                  {/* --- SỬ DỤNG CUTE TOOLTIP --- */}
+                  {/* Nếu có note thì bọc Tooltip, không thì render Box thường */}
+                  {item.note ? (
+                    <CuteTooltip title={item.note} placement="top">
+                      <Box className="timeline-location-icon" sx={{ position: 'relative', zIndex: 2, cursor: 'pointer' }}>
+                        <LocationOnIcon sx={{ color: "#4A90E2", fontSize: 26 }} />
+                        {item.hasWarning && (
+                          <Box className="warning-badge">
+                            <WarningAmberIcon sx={{ fontSize: 16, color: "#fff" }} />
+                          </Box>
+                        )}
+                      </Box>
+                    </CuteTooltip>
+                  ) : (
+                    <Box className="timeline-location-icon" sx={{ position: 'relative', zIndex: 2 }}>
+                      <LocationOnIcon sx={{ color: "#4A90E2", fontSize: 26 }} />
                       {item.hasWarning && (
-                        <Box
-                          sx={{
-                            position: "absolute",
-                            bottom: -4,
-                            right: -4,
-                            width: 20,
-                            height: 20,
-                            borderRadius: "50%",
-                            bgcolor: "#ff9800",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            border: "2px solid #fff",
-                          }}
-                        >
-                          <WarningAmberIcon sx={{ fontSize: 12, color: "#fff" }} />
+                        <Box className="warning-badge">
+                          <WarningAmberIcon sx={{ fontSize: 16, color: "#fff" }} />
                         </Box>
                       )}
                     </Box>
-                  </Tooltip>
+                  )}
+                  {/* --- HẾT PHẦN TOOLTIP --- */}
 
                   {/* Time */}
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "#1976d2" }}>
+                  <Typography variant="caption" fontWeight={700} sx={{ color: "#4A90E2", mt: 0.5 }}>
                     {item.time}
                   </Typography>
 
@@ -574,62 +605,31 @@ function ScheduleDetail() {
                   <Typography
                     variant="caption"
                     align="center"
+                    fontWeight={600}
                     sx={{
                       maxWidth: 100,
                       fontSize: "0.7rem",
                       lineHeight: 1.2,
                       wordBreak: "break-word",
+                      color: "#2C3E50"
                     }}
                   >
                     {item.name}
                   </Typography>
                 </Stack>
 
-                {/* Transport Arrow */}
+                {/* Transport Arrow (Giữ nguyên) */}
                 {index < scheduleData.timeline.length - 1 && (
-                  <Stack alignItems="center" spacing={0.5} sx={{ mx: 2 }}>
-                    {/* Transport Icon */}
-                    <Box
-                      sx={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: "50%",
-                        bgcolor: "#e3f2fd",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
+                  <Stack alignItems="center" spacing={0.5} sx={{ mx: 2, mt: 1 }}>
+                    <Box className="transport-icon-circle">
                       {getTransportIcon(scheduleData.timeline[index + 1].transport)}
                     </Box>
-
-                    {/* Duration */}
                     {scheduleData.timeline[index + 1].duration && (
-                      <Typography variant="caption" color="text.secondary" sx={{ fontSize: "0.65rem" }}>
+                      <Typography variant="caption" fontWeight={600} sx={{ fontSize: "0.65rem", color: "#2C3E50" }}>
                         {scheduleData.timeline[index + 1].duration}
                       </Typography>
                     )}
-
-                    {/* Arrow Line */}
-                    <Box
-                      sx={{
-                        width: 120,
-                        height: 2,
-                        bgcolor: "#1976d2",
-                        position: "relative",
-                        "&::after": {
-                          content: '""',
-                          position: "absolute",
-                          right: -6,
-                          top: -4,
-                          width: 0,
-                          height: 0,
-                          borderLeft: "6px solid #1976d2",
-                          borderTop: "5px solid transparent",
-                          borderBottom: "5px solid transparent",
-                        },
-                      }}
-                    />
+                    <Box className="timeline-arrow" sx={{ width: 80 }} />
                   </Stack>
                 )}
               </Box>
@@ -639,16 +639,17 @@ function ScheduleDetail() {
 
         {/* User info */}
         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <Avatar src={scheduleData.user.avatar} sx={{ width: 48, height: 48 }} />
-          <Typography variant="subtitle1" fontWeight={600}>
+          <Avatar src={scheduleData.user.avatar} className="avatar-elevated" sx={{ width: 48, height: 48 }} />
+          <Typography variant="subtitle1" fontWeight={700} color="#2C3E50">
             {scheduleData.user.name}
           </Typography>
         </Stack>
-        <Grid container spacing={3}>
+        
+        <Grid container spacing={4}>
           {/* Timeline */}
           <Grid item xs={12} md={9} sx={{ flex: 1 }}>
             <Box>
-              {/* Timeline Items (giao diện cũ) */}
+              {/* Timeline Items */}
               {scheduleData.timeline.map((item, index) => (
                 <Box key={item.id} sx={{ position: "relative" }}>
                   {/* Timeline line */}
@@ -656,11 +657,12 @@ function ScheduleDetail() {
                     <Box
                       sx={{
                         position: "absolute",
-                        left: 20,
-                        top: 50,
-                        bottom: -20,
-                        width: 2,
-                        bgcolor: "#ddd",
+                        left: { xs: 15, sm: 38 }, // Căn chỉnh lại cho khớp icon
+                        top: 180,
+                        bottom: 0,
+                        width: 3,
+                        background: 'linear-gradient(180deg, #4A90E2 0%, #FF6B9D 100%)',
+                        borderRadius: 2,
                         zIndex: 0,
                       }}
                     />
@@ -669,29 +671,19 @@ function ScheduleDetail() {
                   <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
                     {/* Time & Icon */}
                     <Stack alignItems="center" sx={{ minWidth: 80 }}>
-                      <Typography variant="body2" fontWeight={600} sx={{ mb: 1 }}>
+                      <Typography variant="body2" fontWeight={700} sx={{ mb: 1, color: '#2C3E50' }}>
                         {item.time}
                       </Typography>
-                      <Box
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          borderRadius: "50%",
-                          bgcolor: "#fff",
-                          border: "2px solid #1976d2",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          zIndex: 1,
-                        }}
-                      >
-                        <LocationOnIcon sx={{ color: "#1976d2" }} />
+                      <Box className="timeline-location-icon">
+                        <LocationOnIcon sx={{ color: "#4A90E2" }} />
                       </Box>
                       {item.transport && (
-                        <Box sx={{ mt: 1 }}>{getTransportIcon(item.transport)}</Box>
+                        <Box sx={{ mt: 2 }} className="transport-icon-circle">
+                          {getTransportIcon(item.transport)}
+                        </Box>
                       )}
                       {item.duration && (
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
+                        <Typography variant="caption" fontWeight={600} sx={{ mt: 0.5, color: '#2C3E50' }}>
                           {item.duration}
                         </Typography>
                       )}
@@ -713,45 +705,46 @@ function ScheduleDetail() {
               ))}
             </Box>
           </Grid>
+          
           {/* Cột phải - Thông tin & Bản đồ */}
           <Grid item xs={12} md={3}>
             <Stack spacing={3}>
               {/* Tổng quan */}
-              <Paper sx={{ p: 3 }}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+              <Paper className="overview-panel">
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
                   概要
                 </Typography>
-                <Stack spacing={1.5}>
+                <Stack spacing={2}>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <AttachMoneyIcon color="action" />
-                    <Typography variant="body2">
+                    <AttachMoneyIcon sx={{ color: '#4A90E2' }} />
+                    <Typography variant="body2" fontWeight={600}>
                       {scheduleData.overview.price}
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <GroupIcon color="action" />
-                    <Typography variant="body2">
+                    <GroupIcon sx={{ color: '#FF6B9D' }} />
+                    <Typography variant="body2" fontWeight={600}>
                       {scheduleData.overview.age}
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <AccessTimeIcon color="action" />
-                    <Typography variant="body2">
+                    <AccessTimeIcon sx={{ color: '#4A90E2' }} />
+                    <Typography variant="body2" fontWeight={600}>
                       {scheduleData.overview.time}
                     </Typography>
                   </Stack>
                   <Stack direction="row" spacing={1} alignItems="center">
-                    <LocationOnIcon color="action" />
-                    <Typography variant="body2">
+                    <LocationOnIcon sx={{ color: '#FF6B9D' }} />
+                    <Typography variant="body2" fontWeight={600}>
                       {scheduleData.overview.locations}場所
                     </Typography>
                   </Stack>
                   {scheduleData.overview.note && (
                     <>
-                      <Divider />
+                      <Box className="styled-divider" />
                       <Stack direction="row" spacing={1} alignItems="flex-start">
-                        <WarningAmberIcon color="warning" fontSize="small" sx={{ mt: 0.3 }} />
-                        <Typography variant="body2">
+                        <WarningAmberIcon sx={{ color: '#FFB84D', mt: 0.3 }} fontSize="small" />
+                        <Typography variant="body2" fontWeight={600}>
                           {scheduleData.overview.note}
                         </Typography>
                       </Stack>
@@ -761,18 +754,18 @@ function ScheduleDetail() {
               </Paper>
 
               {/* Danh sách chú ý */}
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                  注意
-                </Typography>
-                <Stack spacing={1.5}>
-                  {scheduleData.warnings.map((warning, index) => (
-                    <Card key={index} variant="outlined">
-                      <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
+              {scheduleData.warnings.length > 0 && (
+                <Paper className="overview-panel">
+                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
+                    注意
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    {scheduleData.warnings.map((warning, index) => (
+                      <Box key={index} className="warning-card" sx={{ p: 1.5 }}>
                         <Stack direction="row" spacing={1} alignItems="flex-start">
-                          <WarningAmberIcon color="warning" fontSize="small" />
+                          <WarningAmberIcon sx={{ color: '#FFB84D' }} fontSize="small" />
                           <Box>
-                            <Typography variant="body2" fontWeight={600}>
+                            <Typography variant="body2" fontWeight={700} color="#2C3E50">
                               {warning.location}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -780,30 +773,18 @@ function ScheduleDetail() {
                             </Typography>
                           </Box>
                         </Stack>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </Stack>
-              </Paper>
+                      </Box>
+                    ))}
+                  </Stack>
+                </Paper>
+              )}
 
               {/* Bản đồ */}
-              <Paper sx={{ p: 2 }}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+              <Paper className="overview-panel">
+                <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
                   地図
                 </Typography>
-                <Box
-                  sx={{
-                    width: "100%",
-                    height: 300,
-                    borderRadius: 2,
-                    overflow: "hidden",
-                    "& .leaflet-container": {
-                      height: "100%",
-                      width: "100%",
-                      borderRadius: 2,
-                    }
-                  }}
-                >
+                <Box className="map-container" sx={{ height: 300 }}>
                   {relatedPlaces.length > 0 ? (
                     <MapContainer
                       center={mapCenter}
@@ -831,7 +812,7 @@ function ScheduleDetail() {
                           >
                             <Popup>
                               <Box sx={{ minWidth: 150 }}>
-                                <Typography variant="subtitle2" fontWeight={600}>
+                                <Typography variant="subtitle2" fontWeight={700}>
                                   {place.name}
                                 </Typography>
                                 <Typography variant="caption" color="text.secondary">
@@ -854,35 +835,27 @@ function ScheduleDetail() {
                         justifyContent: "center",
                       }}
                     >
-                      <Typography color="text.secondary">地図データがありません</Typography>
+                      <Typography color="text.secondary" fontWeight={600}>地図データがありません</Typography>
                     </Box>
                   )}
                 </Box>
               </Paper>
             </Stack>
           </Grid>
-
-
         </Grid>
 
         {/* Related Places Section */}
         {relatedPlaces.length > 0 && (
           <Box sx={{ mt: 4 }}>
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 3 }}>
+            <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: '#2C3E50' }}>
               関連する場所
             </Typography>
             <Grid container spacing={3}>
               {relatedPlaces.map((place) => (
                 <Grid item xs={12} sm={6} md={3} key={place.id}>
                   <Card 
-                    sx={{ 
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s, box-shadow 0.2s',
-                      '&:hover': {
-                        transform: 'translateY(-4px)',
-                        boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
-                      }
-                    }}
+                    className="related-place-card"
+                    sx={{ cursor: 'pointer' }}
                     onClick={() => navigate(`/places/${place.id}`)}
                   >
                     <CardMedia
@@ -893,10 +866,13 @@ function ScheduleDetail() {
                       sx={{ objectFit: "cover" }}
                     />
                     <CardContent>
-                      <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                        {place.category}
-                      </Typography>
-                      <Typography variant="h6" fontWeight={600} noWrap>
+                      <Chip 
+                        label={place.category} 
+                        size="small" 
+                        className="chip-elevated-pink"
+                        sx={{ mb: 1 }}
+                      />
+                      <Typography variant="h6" fontWeight={700} noWrap color="#2C3E50">
                         {place.name}
                       </Typography>
                     </CardContent>
