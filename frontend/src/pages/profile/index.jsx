@@ -1,120 +1,84 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Box,
-  Container,
-  Typography,
-  Avatar,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  Card,
-  CardContent,
-  CardMedia,
-  IconButton,
-  Button,
-  Rating,
-  Grid,
-  Divider
-} from '@mui/material';
-import FavoriteIcon from '@mui/icons-material/Favorite';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import EventIcon from '@mui/icons-material/Event';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+  User,
+  Heart,
+  Calendar,
+  LogOut,
+  MapPin,
+  Frown
+} from 'lucide-react';
 import { getCookie, deleteCookie } from '../../helpers/cookies.helper';
-import {
-  getFavoritePlaces,
-  getFavoritePlans,
-  removeFavoritePlace,
-} from '../../services/favorite.services';
-import { unlikeDayPlan } from '../../services/favorite.services';
-import { Stack } from '@mui/material'; // Thêm Stack
-import StarIcon from '@mui/icons-material/Star'; // Thêm StarIcon
+import { getFavoritePlaces, getFavoritePlans, removeFavoritePlace, unlikeDayPlan } from '../../services/favorite.services';
+import SpotCard from '../../components/spot-card';
+import PaginationControl from '../../components/common/PaginationControl'; // Import Component Mới
 
-function Profile() {
+const Profile = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('favorites'); // 'favorites' or 'plans'
+  const [activeTab, setActiveTab] = useState('favorites');
   const fullName = getCookie('fullName');
   const token = getCookie('token');
 
-  // Initial state empty — sẽ được load từ backend trong useEffect
   const [favoriteSpots, setFavoriteSpots] = useState([]);
-
   const [favoritePlans, setFavoritePlans] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const LIMIT = 6;
 
+  const COLORS = {
+    bg: '#FFFBF5',
+    pink: '#FF90E8',
+    blue: '#5BC0EB',
+    yellow: '#FDE24F',
+    red: '#FF6B6B'
+  };
+
   useEffect(() => {
-    // Kiểm tra đăng nhập
-    if (!token) {
-      navigate('/login');
-    }
+    if (!token) navigate('/login');
   }, [token, navigate]);
 
   useEffect(() => {
-    // Load favorites (places paginated, plans not paginated)
     const userStr = getCookie('user');
     if (!userStr) return;
     try {
       const user = JSON.parse(userStr);
       const user_id = user._id;
 
-      (async () => {
+      const fetchData = async () => {
         try {
           if (activeTab === 'favorites') {
-            const respPlaces = await getFavoritePlaces(user_id, page, LIMIT);
-            if (respPlaces && respPlaces.data) {
-              const spots = respPlaces.data.map((f) => ({
-                id: f.place_id || f.placeId || f.place_id,
-                _id: f.place_id || f.placeId || f.place_id,
-                name: f.name || '',
-                description: f.description,
-                price_range: f.price_range,
-                added_at: f.created_at,
-                rating: f.rating ? Number(f.rating) : 0,
-                image: (f.images && f.images.length > 0 && (f.images[0].url || f.images[0])) ? (f.images[0].url || f.images[0]) : '/placeholder.jpg',
-                reviews: f.total_reviews ? `${f.total_reviews} đánh giá` : '',
-                rawFavoriteId: f.favorite_id || f.favoriteId || f.favorite_id
+            const res = await getFavoritePlaces(user_id, page, LIMIT);
+            if (res?.data) {
+              const spots = res.data.map(f => ({
+                ...f,
+                id: f.place_id || f._id,
+                _id: f.place_id || f._id,
+                thumbnail: (f.images?.[0]?.url || f.images?.[0]) || null
               }));
-              setFavoriteSpots(spots.filter(Boolean));
-              if (respPlaces.pagination) setTotalPages(respPlaces.pagination.totalPages || 1);
-            } else {
-              setFavoriteSpots([]);
-              setTotalPages(1);
+              setFavoriteSpots(spots);
+              setTotalPages(res.pagination?.totalPages || 1);
             }
           } else {
-            const respPlans = await getFavoritePlans(user_id);
-            if (respPlans && respPlans.data) {
-              const plans = respPlans.data.map((p) => ({
-                id: p.day_plan_id || p._id || p.id,
-                like_id: p.like_id || p._id || p.id,
-                name: p.title || p.name || (p.day_plan && p.day_plan.title) || 'Kế hoạch',
-                description: p.description || "",
-                places: p.places || [],
-                place_count: p.place_count || p.places.length || 0,
+            const res = await getFavoritePlans(user_id);
+            if (res?.data) {
+              const plans = res.data.map(p => ({
+                id: p.day_plan_id || p._id,
+                name: p.title || p.name || 'Plan',
+                description: p.description,
+                image: p.images?.[0]?.url || null,
                 total_likes: p.total_likes || 0,
-                tags: p.tags || [],
-                author: p.author || {},
-                image: (p.images && p.images.length > 0 && p.images[0].url) ? p.images[0].url : '/placeholder.jpg',
-                raw: p,
-                liked_at: p.created_at || p.liked_at
+                places: p.places || []
               }));
               setFavoritePlans(plans);
-            } else {
-              setFavoritePlans([]);
             }
           }
         } catch (err) {
-          console.error('Load favorites error', err);
+          console.error("Error fetching data:", err);
         }
-      })();
+      };
+      fetchData();
     } catch (e) {
-      console.warn('Invalid user cookie', e);
+      console.warn("Invalid user cookie");
     }
   }, [token, activeTab, page]);
 
@@ -125,445 +89,156 @@ function Profile() {
     navigate('/login');
   };
 
-  const handleUnfavorite = (id, type) => {
-    const userStr = getCookie('user');
-    if (!userStr) return;
-    const user = JSON.parse(userStr);
-    const user_id = user._id;
+  const PlanCard = ({ plan }) => (
+    <div
+      onClick={() => navigate(`/schedule/${plan.id}`)}
+      className="w-full bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#000] transition-all cursor-pointer flex flex-col h-full"
+    >
+      <div className="h-40 bg-gray-200 border-b-2 border-black relative">
+        <img src={plan.image || 'https://via.placeholder.com/300x200'} alt={plan.name} className="w-full h-full object-cover" />
+        <div className="absolute top-2 right-2 bg-white border-2 border-black px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-sm">
+          <Heart size={12} className="fill-red-500 text-red-500" /> {plan.total_likes}
+        </div>
+      </div>
+      <div className="p-4 flex flex-col flex-1">
+        <h3 className="font-black text-lg mb-1 line-clamp-1">{plan.name}</h3>
+        <div className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1">
+          <MapPin size={12} /> {plan.places.length} 箇所 (Địa điểm)
+        </div>
+        <p className="text-sm text-gray-600 line-clamp-3 flex-1">{plan.description || "Mô tả không có sẵn."}</p>
 
-    if (type === 'spot') {
-      // Call backend to remove
-      removeFavoritePlace(user_id, id)
-        .then(() => {
-          setFavoriteSpots((prev) => prev.filter((spot) => spot.id !== id && spot._id !== id));
-        })
-        .catch((err) => {
-          console.error('Remove favorite error', err);
-        });
-    } else {
-      // Call backend to unlike the day plan, then update UI
-      unlikeDayPlan(user_id, id)
-        .then(() => {
-          setFavoritePlans((prev) => prev.filter((plan) => plan.id !== id));
-        })
-        .catch((err) => {
-          console.error('Remove favorite plan error', err);
-        });
-    }
-  };
-
-  const handleViewDetail = (id, type) => {
-    if (type === 'spot') {
-      navigate(`/places/${id}`);
-    } else {
-      navigate(`/schedule/${id}`);
-    }
-  };
-
-  // Compute visible pagination items according to rules:
-  // - Always show page 1 and last page
-  // - Show current page and its immediate neighbors
-  // - Use ellipses where there's a gap
-  const getVisiblePagination = (current, total) => {
-    if (total <= 5) {
-      return Array.from({ length: total }, (_, i) => i + 1);
-    }
-    const pagesSet = new Set();
-    pagesSet.add(1);
-    pagesSet.add(total);
-    pagesSet.add(current);
-    if (current - 1 >= 2) pagesSet.add(current - 1);
-    if (current + 1 <= total - 1) pagesSet.add(current + 1);
-
-    const pages = Array.from(pagesSet).filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
-    const result = [];
-    let prev = 0;
-    for (const p of pages) {
-      if (prev && p - prev > 1) {
-        result.push('ellipsis');
-      }
-      result.push(p);
-      prev = p;
-    }
-    return result;
-  };
+        <div className="mt-4 flex gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              unlikeDayPlan(JSON.parse(getCookie('user'))._id, plan.id).then(() => {
+                setFavoritePlans(prev => prev.filter(p => p.id !== plan.id));
+              });
+            }}
+            className="flex-1 py-1.5 border-2 border-black rounded font-bold text-xs bg-red-100 hover:bg-red-200 text-red-600 shadow-[2px_2px_0_0_#000] active:shadow-none transition-all"
+          >
+            Hủy thích
+          </button>
+          <button className="flex-[2] py-1.5 bg-[#FDE24F] border-2 border-black rounded font-bold text-xs hover:bg-[#FCE040] shadow-[2px_2px_0_0_#000] active:shadow-none transition-all">
+            Xem chi tiết
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
-    <>
-      <Box sx={{ bgcolor: '#f5f5f5', minHeight: '100vh', py: 2 }}>
-        <Container maxWidth="xl">
-          <Grid container spacing={3} sx={{ alignItems: 'stretch' }}>
-            {/* Left Sidebar - 3 parts */}
-            <Grid item xs={12} md={3} sx={{ display: 'flex' }}>
-              <Card sx={{ 
-                p: 3, 
-                position: 'sticky', 
-                top: 20, 
-                width: '100%', 
-                display: 'flex', 
-                flexDirection: 'column',
-                minHeight: 'calc(100vh - 80px)',
-                maxHeight: 'calc(100vh - 80px)'
-              }}>
-                {/* Profile Section */}
-                <Box sx={{ textAlign: 'center', mb: 3 }}>
-                  <Avatar
-                    sx={{
-                      width: 80,
-                      height: 80,
-                      mx: 'auto',
-                      mb: 2,
-                      bgcolor: 'primary.main'
-                    }}
-                  >
-                    <AccountCircleIcon sx={{ fontSize: 60 }} />
-                  </Avatar>
-                  <Typography variant="h6" fontWeight={600}>
-                    {fullName || 'User'}
-                  </Typography>
-                </Box>
+    <div className="min-h-screen pb-10 pt-8 font-sans" style={{ backgroundColor: COLORS.bg }}>
+      {/* 
+        SỬA 1: Giảm padding và max-width để nội dung gọn hơn 
+        Trước: max-w-7xl px-4 -> Sau: max-w-[1280px] px-6
+      */}
+      <div className="max-w-[1280px] mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
 
-                <Divider sx={{ my: 2 }} />
+          {/* --- SIDEBAR --- */}
+          <div className="md:col-span-3">
+            <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000] sticky top-8 flex flex-col h-[calc(100vh-100px)]">
 
-                {/* Menu List */}
-                <List sx={{ flex: 1 }}>
-                  <ListItem
-                    button
-                    selected={activeTab === 'favorites'}
-                    onClick={() => setActiveTab('favorites')}
-                    sx={{
-                      borderRadius: 1,
-                      mb: 1,
-                      '&.Mui-selected': {
-                        bgcolor: 'primary.light',
-                        '&:hover': { bgcolor: 'primary.light' }
-                      }
-                    }}
-                  >
-                    <ListItemIcon>
-                      <FavoriteIcon color={activeTab === 'favorites' ? 'primary' : 'action'} />
-                    </ListItemIcon>
-                    <ListItemText primary="お気に入りスト" />
-                  </ListItem>
+              {/* Avatar Info */}
+              <div className="flex flex-col items-center mb-8 mt-4">
+                <div className="w-24 h-24 rounded-full border-2 border-black overflow-hidden mb-3 shadow-[4px_4px_0_0_#000]">
+                  <div className="w-full h-full bg-[#5BC0EB] flex items-center justify-center">
+                    <User size={48} color="white" />
+                  </div>
+                </div>
+                <h2 className="text-xl font-black text-center text-black tracking-tight">{fullName || 'Guest User'}</h2>
 
-                  <ListItem
-                    button
-                    selected={activeTab === 'plans'}
-                    onClick={() => setActiveTab('plans')}
-                    sx={{
-                      borderRadius: 1,
-                      mb: 1,
-                      '&.Mui-selected': {
-                        bgcolor: 'primary.light',
-                        '&:hover': { bgcolor: 'primary.light' }
-                      }
-                    }}
-                  >
-                    <ListItemIcon>
-                      <EventIcon color={activeTab === 'plans' ? 'primary' : 'action'} />
-                    </ListItemIcon>
-                    <ListItemText primary="お気に入りプラン" />
-                  </ListItem>
-                </List>
+              </div>
 
-                <Divider sx={{ my: 2, mt: 'auto' }} />
 
-                {/* Logout Button */}
-                <Button
-                  fullWidth
-                  variant="outlined"
-                  color="error"
-                  startIcon={<LogoutIcon />}
-                  onClick={handleLogout}
-                  sx={{ mt: 0 }}
+
+              {/* Navigation Menu (flex-1 để đẩy nút Logout xuống đáy) */}
+              <nav className="flex flex-col gap-4 flex-1">
+                <button
+                  onClick={() => setActiveTab('favorites')}
+                  className={`flex items-center gap-3 px-4 py-4 rounded-lg border-2 border-black font-bold transition-all ${activeTab === 'favorites'
+                      ? 'bg-[#FF90E8] shadow-[4px_4px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
+                      : 'bg-white hover:bg-gray-50'
+                    }`}
                 >
-                  ログアウト
-                </Button>
-              </Card>
-            </Grid>
+                  <Heart size={20} className={activeTab === 'favorites' ? 'fill-black' : ''} />
+                  <span>お気に入りリスト</span>
+                </button>
 
-            {/* Right Content Area - 9 parts */}
-            <Grid item xs={12} md={9} sx={{flex:1}}>
-              <Grid container spacing={3} alignItems="stretch" alignContent="stretch">
-                {(activeTab === 'favorites' ? favoriteSpots : favoritePlans).map((item) => (
-                  <Grid item xs={12} sm={6} md={4} key={item.id} sx={{ display: 'flex', alignItems: 'stretch', justifyContent: 'center' }}>
-                    <Card
-                      sx={{
-                        width: { xs: '100%', sm: 320, md: 348 },
-                        maxWidth: 348,
-                        minHeight: 420,
-                        boxSizing: 'border-box',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        '&:hover': {
-                          transform: 'translateY(-4px)',
-                          boxShadow: 4
-                        }
+                <button
+                  onClick={() => setActiveTab('plans')}
+                  className={`flex items-center gap-3 px-4 py-4 rounded-lg border-2 border-black font-bold transition-all ${activeTab === 'plans'
+                      ? 'bg-[#5BC0EB] shadow-[4px_4px_0_0_#000] translate-x-[-2px] translate-y-[-2px]'
+                      : 'bg-white hover:bg-gray-50'
+                    }`}
+                >
+                  <Calendar size={20} className={activeTab === 'plans' ? 'fill-black' : ''} />
+                  <span>お気に入りプラン</span>
+                </button>
+              </nav>
+
+
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold text-red-600 hover:bg-red-50 transition-all shadow-[2px_2px_0_0_#000] active:translate-y-[1px] active:shadow-none"
+              >
+                <LogOut size={18} />
+                <span>ログアウト</span>
+              </button>
+            </div>
+          </div>
+
+          {/* --- MAIN CONTENT --- */}
+          <div className="md:col-span-9">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {activeTab === 'favorites' ? (
+                favoriteSpots.length > 0 ? (
+                  favoriteSpots.map(spot => (
+                    <SpotCard
+                      key={spot.id}
+                      spot={spot}
+                      isFavorite={true}
+                      onToggleFavorite={(isFav) => {
+                        if (!isFav) setFavoriteSpots(prev => prev.filter(s => s.id !== spot.id))
                       }}
-                    >
-                    
-                      <CardMedia
-                        component="div"
-                        sx={{
-                          height: 180,
-                          bgcolor: '#e0e0e0',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        {item.image ? (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                          />
-                        ) : null /* Không cần Typography nữa */}
-                      </CardMedia>
-
-                      <CardContent sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', p: 2 }}>
-                        <Box>
-                          {/* --- HEADER: TIÊU ĐỀ + NÚT TIM (Dùng Flexbox) --- */}
-                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                            
-                            {/* Tiêu đề */}
-                            <Typography
-                              variant="h6"
-                              fontWeight={600}
-                              sx={{
-                                lineHeight: 1.2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                wordBreak: 'break-word',
-                                minHeight: '2.4em',
-                                mr: 1 // Tạo khoảng cách nhỏ với nút tim để không bị dính sát
-                              }}
-                            >
-                              {item.name}
-                            </Typography>
-
-                            {/* --- CỤM TIM + SỐ LƯỢNG (Cột dọc) --- */}
-                            <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '40px' }}>
-                              {/* Nút Tim */}
-                              <IconButton
-                                onClick={() => handleUnfavorite(item.id, item.type || (activeTab === 'favorites' ? 'spot' : 'plan'))}
-                                size="small"
-                                sx={{ p: 0.5, mt: -0.5 }} // p:0.5 để nút gọn hơn
-                              >
-                                <FavoriteIcon color="error" />
-                              </IconButton>
-                              
-                              {/* Số lượng (Likes) nằm dưới tim */}
-
-                              {activeTab !== 'favorites' && (
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontSize: '0.7rem', 
-                                  color: 'text.secondary', 
-                                  textAlign: 'center',
-                                  lineHeight: 1
-                                }}
-                              >
-                                {/* Bạn có thể dùng hàm replace để chỉ lấy số nếu muốn gọn: item.reviews.replace(/\D/g,'') */}
-                                {item.total_likes ? item.total_likes : '0'}
-                              </Typography>
-                              )}
-
-                            </Box>
-                          </Box>
-
-                          {/* Rating */}
-                          {activeTab === 'favorites' && (
-                          <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 1, mt: 2 }}>
-                          <StarIcon sx={{ color: 'gold', fontSize: 18 }} />
-                          <Typography variant="body2" fontWeight={600}>
-                            {item.rating != null ? Number(item.rating).toFixed(1) : '0'}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, mt: 2 }}>
-                            ({item.reviews || 0})
-                          </Typography>
-                          </Stack>
-                          )}
-                  
-                          {/* Giá + Mô tả */}
-                          {activeTab === 'favorites' && (
-                          <Box sx={{ mb: 2 }}>
-                            <Typography variant="body2" color="primary" fontWeight={500} sx={{ mb: 0.5 }}>
-                              💰 {item.price_range || 'Liên hệ'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary" 
-                              sx={{ 
-                                display: 'block', 
-                                lineHeight: 1.4, 
-                                mt: 1, 
-                                mb: 2,
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis', 
-                                display: '-webkit-box',
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: 'vertical',
-                                wordBreak: 'break-word',
-                                minHeight: '3rem' 
-                              }}>
-                              <strong>Mô tả:</strong> {item.description
-                                ? item.description.length > 50
-                                  ? item.description.slice(0, 50) + '...'
-                                  : item.description
-                                : ''}
-                            </Typography>
-                          </Box>
-                          )}
-                      
-                          {activeTab !== 'favorites' && (
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            gutterBottom 
-                            sx={{ 
-                              mb: 1, 
-                              mt: 2,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis', 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              wordBreak: 'break-word',
-                              minHeight: '3rem'
-                            }}>
-                            <strong>Địa điểm:</strong> {item.places.map(p => p.name || p.title).join(', ')}
-                          </Typography>
-                          )}
-
-                          {activeTab !== 'favorites' && (
-                          <Typography 
-                            variant="body2" 
-                            color="text.secondary" 
-                            gutterBottom 
-                            sx={{ 
-                              mb: 2, 
-                              mt: 1,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis', 
-                              display: '-webkit-box',
-                              WebkitLineClamp: 2,
-                              WebkitBoxOrient: 'vertical',
-                              wordBreak: 'break-word',
-                              minHeight: '3rem'
-                            }}>
-                            <strong>Mô tả:</strong> {item.description}
-                          </Typography>
-                          )}
-                        </Box>  
-
-                        {/* Detail Button */}
-                        <Button
-                          fullWidth
-                          variant="outlined"
-                          onClick={() => handleViewDetail(item.id, activeTab === 'favorites' ? 'spot' : 'plan')}
-                          sx={{ mt: 0.5 }}
-                        >
-                          詳細を見る
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-
-              {/* Pagination for favorites (places) */}
-              {activeTab === 'favorites' && totalPages > 1 && (
-                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <IconButton
-                      size="small"
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      disabled={page === 1}
-                      aria-label="previous page"
-                    >
-                      <ChevronLeftIcon />
-                    </IconButton>
-
-                    {getVisiblePagination(page, totalPages).map((item, idx) =>
-                      item === 'ellipsis' ? (
-                        <Typography
-                          key={`el-${idx}`}
-                          sx={{ px: 1.25, color: 'text.secondary', userSelect: 'none' }}
-                        >
-                          &hellip;
-                        </Typography>
-                      ) : (
-                        <Button
-                          key={item}
-                          size="small"
-                          onClick={() => setPage(item)}
-                          variant={item === page ? 'contained' : 'text'}
-                          color={item === page ? 'primary' : 'inherit'}
-                          sx={
-                            item === page
-                              ? {
-                                  minWidth: 40,
-                                  height: 36,
-                                  borderRadius: 2,
-                                  px: 1.5,
-                                  bgcolor: 'primary.main',
-                                  color: 'common.white',
-                                  boxShadow: 3,
-                                  '&:hover': { bgcolor: 'primary.dark' }
-                                }
-                              : {
-                                  minWidth: 34,
-                                  height: 32,
-                                  color: 'primary.main',
-                                  '&:hover': { bgcolor: 'transparent' }
-                                }
-                          }
-                        >
-                          {item}
-                        </Button>
-                      )
-                    )}
-
-                    <IconButton
-                      size="small"
-                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      disabled={page === totalPages}
-                      aria-label="next page"
-                    >
-                      <ChevronRightIcon />
-                    </IconButton>
-                  </Box>
-                </Box>
+                    />
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0_0_#000] border-dashed">
+                    <Frown size={64} strokeWidth={1.5} className="mb-4" />
+                    <p className="font-bold text-lg">お気に入りリストがありません。</p>
+                  </div>
+                )
+              ) : (
+                favoritePlans.length > 0 ? (
+                  favoritePlans.map(plan => (
+                    <PlanCard key={plan.id} plan={plan} />
+                  ))
+                ) : (
+                  <div className="col-span-full py-20 flex flex-col items-center justify-center text-gray-400 bg-white border-2 border-black rounded-xl shadow-[4px_4px_0_0_#000] border-dashed">
+                    <Frown size={64} strokeWidth={1.5} className="mb-4" />
+                    <p className="font-bold text-lg">お気に入りプランがありません。</p>
+                  </div>
+                )
               )}
+            </div>
 
-              {/* Empty State */}
-              {((activeTab === 'favorites' && favoriteSpots.length === 0) ||
-                (activeTab === 'plans' && favoritePlans.length === 0)) && (
-                <Box
-                  sx={{
-                    textAlign: 'center',
-                    py: 8,
-                    bgcolor: 'white',
-                    borderRadius: 2
-                  }}
-                >
-                  <FavoriteBorderIcon sx={{ fontSize: 64, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" color="text.secondary">
-                    お気に入りがまだありません
-                  </Typography>
-                </Box>
-              )}
-            </Grid>
-          </Grid>
-        </Container>
-      </Box>
-    </>
+            {/* PHÂN TRANG KIỂU MỚI (Dark Pill) */}
+            {activeTab === 'favorites' && totalPages > 1 && (
+              <PaginationControl
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            )}
+          </div>
+
+        </div>
+      </div>
+    </div>
   );
-}
+};
 
 export default Profile;
