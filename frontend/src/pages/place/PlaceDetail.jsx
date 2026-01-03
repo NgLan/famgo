@@ -40,7 +40,6 @@ const PlaceDetail = () => {
   const { id } = useParams(); // Lấy ID địa điểm từ URL
   const navigate = useNavigate();
   const [placeData, setPlaceData] = useState(null);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isFavorite, setIsFavorite] = useState(false);
@@ -58,12 +57,8 @@ const PlaceDetail = () => {
         );
         const respData = detailResponse.data;
         const place = respData?.data || respData;
-        const reviewsResponse = await axios.get(
-          `http://localhost:3000/api/reviews/place/${id}?limit=2`
-        );
 
         setPlaceData(place);
-        setReviews(reviewsResponse.data.data);
 
         // Nếu đã đăng nhập, kiểm tra trạng thái favorite
         try {
@@ -79,10 +74,10 @@ const PlaceDetail = () => {
               setIsFavorite(!!chk.data.is_favorite);
             }
           }
-        } catch (e) {
+        } catch {
           toast.error("お気に入りの確認に失敗しました。");
         }
-      } catch (err) {
+      } catch {
         toast.error("詳細情報の取得中にエラーが発生しました。");
         setError("詳細を読み込めません。IDをご確認ください。");
       } finally {
@@ -125,15 +120,14 @@ const PlaceDetail = () => {
   // Helper function to reload reviews
   const fetchReviews = async () => {
     try {
-      const reviewsResponse = await axios.get(
+      await axios.get(
         `http://localhost:3000/api/reviews/place/${id}?limit=2`
       );
-      setReviews(reviewsResponse.data.data);
       // Refresh stats box khi review được submit/update
       setRefreshStatsKey((prev) => prev + 1);
-    } catch (err) {
+    } catch {
       toast.error("レビューの読み込みに失敗しました。");
-      //   console.error("Error loading reviews:", err);
+      //   console.error("Error loading reviews:", _err);
     }
   };
 
