@@ -87,7 +87,7 @@ function Register() {
       // Kiểm tra thành công dựa vào response có data hoặc message thành công
       if (response && (response.data || response.message === 'Đăng ký thành công')) {
         toast.success('登録に成功しました。');
-        
+
         // Chuyển hướng đến trang login sau 1 giây
         setTimeout(() => {
           navigate('/login');
@@ -104,58 +104,66 @@ function Register() {
   };
 
   return (
-    <>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#f6f2df',
+      }}
+    >
       <Header />
       <Box
         sx={{
-          minHeight: '100vh',
+          flex: 1,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #e3f2fd 0%, #fce4ec 50%, #fff8e1 100%)',
-          py: 4
+          py: { xs: 6, sm: 8 },
+          px: 2,
         }}
       >
-        <Container maxWidth="sm">
+        <Container maxWidth="sm" sx={{ display: 'flex', justifyContent: 'center' }}>
           <Paper
-            elevation={10}
+            elevation={0}
             sx={{
-              p: 4,
+              width: '100%',
+              maxWidth: 620,
+              p: { xs: 3, sm: 4 },
               borderRadius: 3,
-              backgroundColor: 'white',
-              border: '2px solid transparent',
-              backgroundClip: 'padding-box',
-              position: 'relative',
-              '&::before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '4px',
-                background: 'linear-gradient(90deg, #f48fb1, #4fc3f7, #ffca28)',
-                borderRadius: '3px 3px 0 0'
-              }
+              backgroundColor: '#fff',
+              border: '2px solid #000',
+              boxShadow: '10px 10px 0 #000',
             }}
           >
             {/* Title */}
-            <Typography
-              variant="h4"
-              component="h1"
-              gutterBottom
-              align="center"
-              sx={{
-                fontWeight: 700,
-                background: 'linear-gradient(135deg, #4fc3f7 0%, #ffca28 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                mb: 4
-              }}
-            >
-              🦊 新規登録
-            </Typography>
-
+            <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+              <Typography
+                variant="h4"
+                component="h1"
+                align="center"
+                sx={{
+                  fontWeight: 900,
+                  color: '#000',
+                  position: 'relative',
+                  display: 'inline-block',
+                  pb: 1,
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    bottom: 0,
+                    width: '65%',
+                    height: 4,
+                    backgroundColor: '#ff5b95',
+                    borderRadius: 999,
+                  },
+                }}
+              >
+                新規登録
+              </Typography>
+            </Box>
             {/* Form */}
             <Box component="form" onSubmit={handleSubmit} noValidate>
               {/* Full Name Input */}
@@ -168,7 +176,23 @@ function Register() {
                 margin="normal"
                 required
                 autoFocus
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  '& .MuiInputLabel-root': {
+                    color: '#000',
+                    fontWeight: 800,
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: '#eef6ff',
+                    '& fieldset': { border: '2px solid #000' },
+                    '&:hover fieldset': { border: '2px solid #000' },
+                    '&.Mui-focused fieldset': { border: '2px solid #000' },
+                  },
+                }}
               />
 
               {/* Email Input */}
@@ -181,7 +205,23 @@ function Register() {
                 onChange={handleChange}
                 margin="normal"
                 required
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  '& .MuiInputLabel-root': {
+                    color: '#000',
+                    fontWeight: 800,
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: '#eef6ff',
+                    '& fieldset': { border: '2px solid #000' },
+                    '&:hover fieldset': { border: '2px solid #000' },
+                    '&.Mui-focused fieldset': { border: '2px solid #000' },
+                  },
+                }}
               />
 
               {/* Password Input */}
@@ -194,7 +234,23 @@ function Register() {
                 onChange={handleChange}
                 margin="normal"
                 required
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  '& .MuiInputLabel-root': {
+                    color: '#000',
+                    fontWeight: 800,
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: '#fdeff5',
+                    '& fieldset': { border: '2px solid #000' },
+                    '&:hover fieldset': { border: '2px solid #000' },
+                    '&.Mui-focused fieldset': { border: '2px solid #000' },
+                  },
+                }}
               />
 
               {/* Confirm Password Input */}
@@ -207,7 +263,23 @@ function Register() {
                 onChange={handleChange}
                 margin="normal"
                 required
-                sx={{ mb: 2 }}
+                sx={{
+                  mb: 2,
+                  '& .MuiInputLabel-root': {
+                    color: '#000',
+                    fontWeight: 800,
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: '#000',
+                  },
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: '#fdeff5',
+                    '& fieldset': { border: '2px solid #000' },
+                    '&:hover fieldset': { border: '2px solid #000' },
+                    '&.Mui-focused fieldset': { border: '2px solid #000' },
+                  },
+                }}
               />
 
               {/* Terms Agreement Checkbox */}
@@ -217,22 +289,16 @@ function Register() {
                     checked={agreedToTerms}
                     onChange={(e) => setAgreedToTerms(e.target.checked)}
                     sx={{
-                      color: '#f48fb1',
-                      '&.Mui-checked': {
-                        color: '#f48fb1'
-                      }
+                      color: '#000',
+                      '&.Mui-checked': { color: '#000' },
                     }}
                   />
                 }
                 label={
-                  <Typography variant="body2">
-                    <span style={{ color: '#f48fb1', fontWeight: 600 }}>
-                      利用規約
-                    </span>
+                  <Typography variant="body2" sx={{ color: '#000', fontWeight: 800 }}>
+                    <span style={{ color: '#ff5b95', fontWeight: 900 }}>利用規約</span>
                     と
-                    <span style={{ color: '#4fc3f7', fontWeight: 600 }}>
-                      プライバシーポリシー
-                    </span>
+                    <span style={{ color: '#1e88e5', fontWeight: 900 }}>プライバシーポリシー</span>
                     に同意します
                   </Typography>
                 }
@@ -247,24 +313,27 @@ function Register() {
                 size="large"
                 disabled={loading}
                 sx={{
-                  py: 1.5,
-                  fontWeight: 600,
+                  py: 1.6,
+                  fontWeight: 900,
                   fontSize: 16,
                   textTransform: 'none',
-                  borderRadius: 50,
+                  borderRadius: 2,
                   mb: 3,
-                  background: 'linear-gradient(135deg, #4fc3f7 0%, #ffca28 100%)',
-                  boxShadow: '0 4px 15px rgba(79,195,247,0.4)',
+                  backgroundColor: '#4a90e2',
+                  border: '2px solid #000',
+                  boxShadow: '4px 4px 0 #000',
                   '&:hover': {
-                    background: 'linear-gradient(135deg, #29b6f6 0%, #ffa726 100%)',
-                    boxShadow: '0 6px 20px rgba(79,195,247,0.5)',
-                    transform: 'translateY(-2px)'
+                    backgroundColor: '#357fd6',
+                    transform: 'translate(-1px, -1px)',
+                    boxShadow: '5px 5px 0 #000',
                   },
                   '&:disabled': {
-                    background: '#ccc',
-                    color: '#666'
+                    background: '#9fbfe8',
+                    color: '#fff',
+                    border: '2px solid #000',
+                    boxShadow: '4px 4px 0 #000',
                   },
-                  transition: 'all 0.3s ease'
+                  transition: 'transform 120ms ease, box-shadow 120ms ease, background-color 120ms ease',
                 }}
               >
                 {loading ? '登録中...' : '登録'}
@@ -272,14 +341,15 @@ function Register() {
 
               {/* Login Link */}
               <Box sx={{ textAlign: 'center' }}>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: '#000', fontWeight: 800 }}>
                   すでにアカウントをお持ちですか？{' '}
                   <Link
                     to="/login"
                     style={{
-                      color: '#f48fb1',
-                      fontWeight: 600,
-                      textDecoration: 'none'
+                      color: '#ff5b95',
+                      fontWeight: 900,
+                      textDecoration: 'underline',
+                      textUnderlineOffset: '4px',
                     }}
                   >
                     ログイン
@@ -290,7 +360,7 @@ function Register() {
           </Paper>
         </Container>
       </Box>
-    </>
+    </Box>
   );
 }
 
