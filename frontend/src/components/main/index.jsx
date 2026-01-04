@@ -2,7 +2,7 @@ import { Outlet } from "react-router-dom";
 
 function ClientMain() {
   return (
-    <main>
+    <main style={{ width: '100%' }}>
       <Outlet />
     </main>
   );
