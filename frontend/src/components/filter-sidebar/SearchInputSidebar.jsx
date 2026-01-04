@@ -1,46 +1,31 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // Cần import hai hook này
-import { Stack, TextField, InputAdornment, IconButton, Typography, Paper } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Search } from 'lucide-react';
 
-// KHÔNG CẦN prop setFilterState nữa
 const SearchInputSidebar = () => {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams(); 
     
-    // Lấy từ khóa hiện tại từ URL (tham số 'keyword')
     const currentUrlKeyword = searchParams.get('keyword') || ''; 
-    
-    // State cục bộ quản lý giá trị input, được khởi tạo từ URL
     const [localKeyword, setLocalKeyword] = useState(currentUrlKeyword); 
 
-    // Đồng bộ TextField với URL: Nếu người dùng search từ Header, 
-    // URL thay đổi, và input ở Sidebar cũng phải cập nhật theo
     useEffect(() => {
         setLocalKeyword(currentUrlKeyword);
-    }, [currentUrlKeyword]); // Chạy khi URL keyword thay đổi
+    }, [currentUrlKeyword]);
 
-    // Hàm này sẽ cập nhật URL thay vì cập nhật filterState
     const handleSearch = () => {
         const keywordToSearch = localKeyword.trim();
-        
-        // Tạo một bản sao của tham số URL hiện tại
         const newSearchParams = new URLSearchParams(searchParams);
 
         if (keywordToSearch) {
-            // Thêm hoặc cập nhật tham số keyword
             newSearchParams.set('keyword', keywordToSearch);
         } else {
-            // Nếu rỗng, xóa tham số keyword khỏi URL
             newSearchParams.delete('keyword');
         }
 
-        // Cập nhật URL. navigate(path?new_params)
-        // Chúng ta chỉ cần thay đổi query string, giữ nguyên pathname hiện tại
         navigate({ search: newSearchParams.toString() }, { replace: true });
     };
     
-    // Xử lý khi nhấn Enter
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
             e.preventDefault();
@@ -49,46 +34,33 @@ const SearchInputSidebar = () => {
     };
 
     return (
-        <Paper 
-            sx={{ 
-                p: 3, 
-                borderRadius: 3, 
-                boxShadow: "0 8px 25px rgba(15,23,42,0.08)" 
-            }}
-        >
-            <Stack spacing={2}>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                    <SearchIcon sx={{ color: "#1976d2" }} />
-                    <Typography variant="subtitle1" fontWeight={700}>
-                        Tìm kiếm
-                    </Typography>
-                </Stack>
-                
-                <TextField
-                    size="small"
-                    placeholder="Nhập tên địa điểm"
+        <div className="bg-white border-2 border-black rounded-2xl shadow-[6px_6px_0_0_#000] p-4">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-8 h-8 bg-[#FDE24F] border-2 border-black rounded-lg flex items-center justify-center">
+                    <Search size={18} strokeWidth={2.5} />
+                </div>
+                <h2 className="text-xl font-black">検索</h2>
+            </div>
+            
+            <div className="relative">
+                <input
+                    type="text"
+                    placeholder="スポット名を入力"
                     value={localKeyword}
                     onChange={(e) => setLocalKeyword(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    fullWidth
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <IconButton 
-                                    size="small" 
-                                    edge="end" 
-                                    onClick={handleSearch} 
-                                    disabled={!localKeyword.trim()} 
-                                >
-                                    <SearchIcon />
-                                </IconButton>
-                            </InputAdornment>
-                        ),
-                    }}
+                    className="w-full px-4 py-2.5 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[4px_4px_0_0_#000] transition-all pr-12"
                 />
-            </Stack>
-        </Paper>
+                <button
+                    onClick={handleSearch}
+                    disabled={!localKeyword.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-[#5BC0EB] border-2 border-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#4AB0DB] transition-colors"
+                >
+                    <Search size={18} className="text-white" strokeWidth={2.5} />
+                </button>
+            </div>
+        </div>
     );
 };
 
-export default SearchInputSidebar;
+export default React.memo(SearchInputSidebar);

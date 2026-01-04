@@ -1,14 +1,13 @@
 import * as React from 'react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Grid, Box, Container, Typography, Pagination, Button, Paper, Stack, IconButton } from '@mui/material';
+import { List, Map as MapIcon } from 'lucide-react';
 import SpotCard from '../../components/spot-card';
 import FilterSidebar from './FilterSidebar';
 import SearchInputSidebar from '../../components/filter-sidebar/SearchInputSidebar';
+import PaginationControl from '../../components/common/PaginationControl';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
-import StarIcon from '@mui/icons-material/Star';
 
 const SearchResultPage = () => {
     const [searchParams] = useSearchParams();
@@ -67,9 +66,14 @@ const SearchResultPage = () => {
                     }
                 }
 
-                // Thêm phân trang
-                apiQueryParams.append('page', page);
-                apiQueryParams.append('limit', 6);
+                // Thêm phân trang (map view load tất cả, list view phân trang)
+                if (viewMode === 'map') {
+                    apiQueryParams.append('page', 1);
+                    apiQueryParams.append('limit', 100);
+                } else {
+                    apiQueryParams.append('page', page);
+                    apiQueryParams.append('limit', 6);
+                }
 
                 const queryString = apiQueryParams.toString();
                 const apiUrlWithQuery = `${API_URL}${queryString ? '?' + queryString : ''}`;
@@ -91,10 +95,10 @@ const SearchResultPage = () => {
 
         fetchDataFromURL();
 
-    }, [searchParams, page]); // CHỈ CHẠY KHI URL HOẶC PAGE THAY ĐỔI
+    }, [searchParams, page, viewMode]); // CHỈ CHẠY KHI URL, PAGE HOẶC VIEW MODE THAY ĐỔI
 
     // --- HÀM 2: XỬ LÝ KHI BẤM NÚT 'LỌC' TRÊN SIDEBAR ---
-    const handleApplyFilter = () => {
+    const handleApplyFilter = useCallback(() => {
         const params = new URLSearchParams();
         
         // Lấy dữ liệu từ Sidebar (tempFilterState) đẩy lên URL
@@ -119,7 +123,12 @@ const SearchResultPage = () => {
         // Fix lỗi dấu cộng: Replace + thành %20 để đồng bộ với Home
         const queryString = params.toString().replace(/\+/g, '%20');
         navigate(`/search?${queryString}`);
-    };
+    }, [tempFilterState, searchParams, navigate]);
+
+    const handleResetFilter = useCallback(() => {
+        setTempFilterState({});
+        navigate('/search');
+    }, [navigate]);
 
     // ... (Các phần Map, Image Helper giữ nguyên không đổi)
     const getCenterCoordinates = () => {
@@ -141,55 +150,107 @@ const SearchResultPage = () => {
 
     if (loading) {
         return (
-            <Container maxWidth="xl" sx={{ mt: 4 }}>
-                <Typography variant="h5" align="center">読み込み中...</Typography>
-            </Container>
+            <div className="min-h-screen" style={{ backgroundColor: '#FFFBF5' }}>
+                <div className="max-w-[1600px] mx-auto px-4 py-6">
+                    <div className="flex gap-6 items-start">
+                        {/* Sidebar - Always Visible */}
+                        <div className="w-80 flex-shrink-0 sticky top-6 self-start">
+                            <div className="flex flex-col gap-4" style={{ height: 'calc(100vh - 3rem)' }}>
+                                <SearchInputSidebar />
+                                <div className="flex-1 min-h-0">
+                                    <FilterSidebar
+                                        tempFilterState={tempFilterState}
+                                        setTempFilterState={setTempFilterState}
+                                        onApply={handleApplyFilter}
+                                        onReset={handleResetFilter}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Loading Content Area */}
+                        <div className="flex-1 min-w-0">
+                            <div className="bg-white border-2 border-black rounded-2xl shadow-[6px_6px_0_0_#000] p-6">
+                                <div className="flex items-center justify-center py-20">
+                                    <div className="text-2xl font-black animate-pulse">読み込み中...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         );
     }
 
     return (
-        <Box sx={{ bgcolor: "#f5f5f5", minHeight: "100vh", py: 3 }}>
-            <Container maxWidth="xl" sx={{ mt: 0 }}>
-                <Grid container spacing={3}>
-                    {/* Sidebar */}
-                    <Grid item xs={12} md={3} sx={{ display: "flex" }}>
-                        <Stack spacing={3} sx={{ width: "100%", height: "100%" }}>
-                            <SearchInputSidebar />
+        <div className="min-h-screen py-6" style={{ backgroundColor: '#FFFBF5' }}>
+            <div className="max-w-[1600px] mx-auto px-4">
+                <div className="flex gap-6">
+                    {/* Sidebar - Sticky */}
+                    <div className="w-80 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] flex flex-col gap-4">
+                        <SearchInputSidebar />
+                        <div className="flex-1 min-h-0">
                             <FilterSidebar
                                 tempFilterState={tempFilterState}
                                 setTempFilterState={setTempFilterState}
                                 onApply={handleApplyFilter}
-                                onReset={() => {
-                                    setTempFilterState({});
-                                    navigate('/search');
-                                }}
+                                onReset={handleResetFilter}
                             />
-                        </Stack>
-                    </Grid>
+                        </div>
+                    </div>
 
-                    {/* Kết quả */}
-                    <Grid item xs={12} md={9} sx={{ flex: 1 }}>
-                        <Paper sx={{ p: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.08)" }}>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                <Typography variant="body1" color="textSecondary" fontWeight={600}>
+                    {/* Main Content */}
+                    <div className="flex-1">
+                        <div className="bg-white border-2 border-black rounded-2xl shadow-[6px_6px_0_0_#000] p-6">
+                            {/* Header */}
+                            <div className="flex justify-between items-center mb-6">
+                                <div className="text-lg font-black">
                                     {totalResults}件のスポットを表示
-                                </Typography>
-                                <Stack direction="row" spacing={1}>
-                                    <Button variant={viewMode === 'list' ? 'contained' : 'outlined'} onClick={() => setViewMode('list')} sx={{ textTransform: 'none', minWidth: 80 }}>LIST</Button>
-                                    <Button variant={viewMode === 'map' ? 'contained' : 'outlined'} onClick={() => setViewMode('map')} sx={{ textTransform: 'none', minWidth: 80 }}>MAP</Button>
-                                </Stack>
-                            </Box>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setViewMode('list')}
+                                        className={`flex items-center gap-2 px-6 py-2 border-2 border-black rounded-lg font-bold transition-all ${
+                                            viewMode === 'list'
+                                                ? 'bg-[#5BC0EB] text-black shadow-[3px_3px_0_0_#000]'
+                                                : 'bg-white text-black shadow-[2px_2px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0_0_#000]'
+                                        }`}
+                                    >
+                                        <List size={18} />
+                                        LIST
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('map')}
+                                        className={`flex items-center gap-2 px-6 py-2 border-2 border-black rounded-lg font-bold transition-all ${
+                                            viewMode === 'map'
+                                                ? 'bg-[#5BC0EB] text-black shadow-[3px_3px_0_0_#000]'
+                                                : 'bg-white text-black shadow-[2px_2px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[3px_3px_0_0_#000]'
+                                        }`}
+                                    >
+                                        <MapIcon size={18} />
+                                        MAP
+                                    </button>
+                                </div>
+                            </div>
 
+                            {/* Content */}
                             {viewMode === 'list' ? (
-                                <Grid container spacing={3}>
-                                    {spots.map((spot) => (
-                                        <Grid item xs={12} sm={6} md={4} key={spot.id || spot._id} sx={{ display: "flex", alignItems: "stretch" }}>
-                                            <SpotCard spot={spot} />
-                                        </Grid>
-                                    ))}
-                                </Grid>
+                                <>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {spots.map((spot) => (
+                                            <SpotCard key={spot.id || spot._id} spot={spot} />
+                                        ))}
+                                    </div>
+                                    
+                                    {/* Pagination */}
+                                    <PaginationControl 
+                                        page={page}
+                                        totalPages={totalPages}
+                                        onPageChange={setPage}
+                                    />
+                                </>
                             ) : (
-                                <Box sx={{ height: 500, width: '100%', borderRadius: 2, overflow: 'hidden' }}>
+                                <div className="h-[600px] w-full border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000]">
                                     <MapContainer center={getCenterCoordinates()} zoom={13} style={{ height: '100%', width: '100%' }}>
                                         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap contributors' />
                                         {spots.map((spot) => {
@@ -198,27 +259,28 @@ const SearchResultPage = () => {
                                             return (
                                                 <Marker position={[coords[1], coords[0]]} key={spot._id}>
                                                     <Popup>
-                                                        <Typography variant="subtitle2" fontWeight="bold">{spot.name}</Typography>
-                                                        <Typography variant="caption">{spot.address}</Typography>
-                                                        <Button size="small" onClick={() => navigate(`/places/${spot._id}`)}>Chi tiết</Button>
+                                                        <div className="font-sans">
+                                                            <div className="font-bold text-base mb-1">{spot.name}</div>
+                                                            <div className="text-sm text-gray-600 mb-2">{spot.address}</div>
+                                                            <button
+                                                                onClick={() => navigate(`/places/${spot._id}`)}
+                                                                className="px-4 py-1 bg-[#FDE24F] border-2 border-black rounded-lg font-bold text-sm shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] transition-all"
+                                                            >
+                                                                詳細を見る
+                                                            </button>
+                                                        </div>
                                                     </Popup>
                                                 </Marker>
                                             );
                                         })}
                                     </MapContainer>
-                                </Box>
+                                </div>
                             )}
-
-                            {viewMode === 'list' && (
-                                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, pb: 2 }}>
-                                    <Pagination count={totalPages} color="primary" page={page} onChange={(event, value) => setPage(value)} />
-                                </Box>
-                            )}
-                        </Paper>
-                    </Grid>
-                </Grid>
-            </Container>
-        </Box>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 };
 
