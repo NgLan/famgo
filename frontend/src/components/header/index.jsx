@@ -1,15 +1,16 @@
-import { AppBar, Toolbar, Stack, IconButton, Button, Box, InputBase, alpha, Divider, Avatar, Typography } from '@mui/material'
+import { AppBar, Toolbar, Stack, IconButton, Button, Box, InputBase, Typography } from '@mui/material'
 import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
 import SearchIcon from '@mui/icons-material/Search'
 import NotificationsIcon from '@mui/icons-material/Notifications'
 import AccountCircleIcon from '@mui/icons-material/AccountCircle'
 import { useNavigate, Link } from 'react-router-dom'
 import { useState } from 'react';
-import { getCookie, deleteCookie } from '../../helpers/cookies.helper';
+import { getCookie } from '../../helpers/cookies.helper';
 
 const Header = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [logoLoadFailed, setLogoLoadFailed] = useState(false);
   const token = getCookie('token');
   const fullName = getCookie('fullName');
 
@@ -31,190 +32,253 @@ const Header = () => {
     }
   };
   return (
-    <AppBar position="static" elevation={0} sx={{ background: 'linear-gradient(135deg, #f48fb1 0%, #4fc3f7 50%, #ffca28 100%)' }}>
-      <Toolbar sx={{ minHeight: 68, gap: 3 }}>
-        {/* Left logo */}
-        <Box
-          component={Link}
-          to="/"
-          sx={{
-            fontWeight: 800,
-            fontSize: 24,
-            letterSpacing: 1,
-            px: 1,
-            textDecoration: 'none',
-            color: '#1a237e',
-            textShadow: '1px 1px 2px rgba(255,255,255,0.5)',
-            '&:hover': { transform: 'scale(1.05)', transition: 'transform 0.2s' }
-          }}
-        >
-          🦊 ハノイ週末
-        </Box>
+    <AppBar
+      position="static"
+      elevation={0}
+      sx={{
+        backgroundColor: '#fff',
+        borderBottom: '2px solid #000',
+      }}
+    >
+      <Toolbar sx={{ minHeight: 72, gap: 2 }}>
+        {/* Left group */}
+        <Stack direction="row" spacing={2} alignItems="center" sx={{ minWidth: 0 }}>
+          {/* Logo */}
+          <Box
+            component={Link}
+            to="/"
+            sx={{
+              px: 1,
+              textDecoration: 'none',
+              color: '#000',
+              display: 'flex',
+              alignItems: 'center',
+              '&:hover': { opacity: 0.9 },
+            }}
+          >
+            {logoLoadFailed ? (
+              <Box
+                sx={{
+                  fontWeight: 900,
+                  fontSize: 28,
+                  letterSpacing: 1,
+                  lineHeight: 1.1,
+                  backgroundImage: 'linear-gradient(transparent 70%, rgba(255, 105, 180, 0.55) 70%)',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                FAMGO!
+              </Box>
+            ) : (
+              <Box
+                component="img"
+                src="/famgo-logo.png"
+                alt="FAMGO"
+                onError={() => setLogoLoadFailed(true)}
+                sx={{
+                  height: 44,
+                  width: 'auto',
+                  display: 'block',
+                }}
+              />
+            )}
+          </Box>
 
-        {/* Divider space between logo and nav */}
-        <Divider orientation="vertical" flexItem sx={{ borderColor: alpha('#fff', 0.5) }} />
+          {/* Divider */}
+          <Box sx={{ width: 2, height: 36, backgroundColor: '#000' }} />
 
-        {/* Navigation group */}
-        <Stack direction="row" spacing={3} alignItems="center" sx={{ mr: 2 }}>
+          {/* Home */}
           <IconButton
             component={Link}
             to="/"
-            size="small"
-            aria-label="ホーム"
-            sx={{ 
-              bgcolor: 'rgba(255,255,255,0.5)', 
-              color: '#1a237e',
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.8)', transform: 'scale(1.1)' },
-              transition: 'all 0.2s'
+            sx={{
+              width: 44,
+              height: 44,
+              border: '2px solid #000',
+              borderRadius: 2,
+              color: '#000',
+              backgroundColor: '#fff',
+              boxShadow: '2px 2px 0 #000',
+              '&:hover': {
+                backgroundColor: '#fff',
+                transform: 'translate(-1px, -1px)',
+                boxShadow: '3px 3px 0 #000',
+              },
+              transition: 'transform 120ms ease, box-shadow 120ms ease',
             }}
           >
             <HomeRoundedIcon fontSize="small" />
           </IconButton>
-          <Button 
-            component={Link} 
-            to="/ranking" 
-            size="small" 
-            sx={{ 
-              fontWeight: 700,
-              color: '#1a237e',
-              bgcolor: 'rgba(255,255,255,0.4)',
-              borderRadius: 2,
-              px: 2,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.7)' } 
-            }}
-          >
-            ランキング
-          </Button>
-          <Button 
-            component={Link} 
-            to="/schedule" 
-            size="small" 
-            sx={{ 
-              fontWeight: 700,
-              color: '#1a237e',
-              bgcolor: 'rgba(255,255,255,0.4)',
-              borderRadius: 2,
-              px: 2,
-              '&:hover': { bgcolor: 'rgba(255,255,255,0.7)' }
-            }}
-          >
-            スケジュール
-          </Button>
+
+          {/* Navigation */}
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 1 }}>
+            <Button
+              component={Link}
+              to="/ranking"
+              size="small"
+              sx={{
+                fontWeight: 800,
+                color: '#000',
+                backgroundColor: 'transparent',
+                textTransform: 'none',
+                '&:hover': { backgroundColor: 'transparent', opacity: 0.85 },
+              }}
+            >
+              ランキング
+            </Button>
+            <Button
+              component={Link}
+              to="/schedule"
+              size="small"
+              sx={{
+                fontWeight: 800,
+                color: '#000',
+                backgroundColor: 'transparent',
+                textTransform: 'none',
+                '&:hover': { backgroundColor: 'transparent', opacity: 0.85 },
+              }}
+            >
+              スケジュール
+            </Button>
+          </Stack>
         </Stack>
 
         {/* Center search box grows */}
-        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center' }}>
+        <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
           <Box
             component="form"
             onSubmit={handleSearch}
-            sx={(theme) => ({
+            sx={{
               display: 'flex',
               alignItems: 'center',
               gap: 1,
               width: '100%',
-              maxWidth: 520,
+              maxWidth: 640,
               px: 2,
-              py: 1,
-              borderRadius: 50,
-              backgroundColor: alpha('#fff', 0.85),
-              border: '2px solid ' + alpha('#f48fb1', 0.5),
-              transition: 'all .3s ease',
-              '&:hover': { 
-                backgroundColor: '#fff',
-                boxShadow: '0 4px 20px rgba(244,143,177,0.3)'
-              },
-              '&:focus-within': {
-                backgroundColor: '#fff',
-                border: '2px solid #f48fb1',
-                boxShadow: '0 4px 20px rgba(244,143,177,0.4)'
-              }
-            })}
+              py: 0.9,
+              borderRadius: 999,
+              backgroundColor: '#fff',
+              border: '2px solid #000',
+              boxShadow: '2px 2px 0 #000',
+            }}
           >
-            <SearchIcon fontSize="small" sx={{ color: '#f48fb1' }} />
+            <SearchIcon fontSize="small" sx={{ color: '#000' }} />
             <InputBase
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="検索..."
+              placeholder="家族でどこへ行く？"
               inputProps={{ 'aria-label': 'search' }}
-              sx={{ flex: 1, fontSize: 14, color: '#333' }}
+              sx={{ flex: 1, fontSize: 14, color: '#111', minWidth: 0 }}
             />
           </Box>
         </Box>
 
         {/* Auth buttons or User Menu */}
         {token ? (
-          <Stack direction="row" spacing={1} alignItems="center">
-
-            {/* User Profile Box - Avatar + Name */}
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
             <Box
               onClick={handleProfileClick}
               sx={{
-                display: 'flex',
+                display: { xs: 'none', sm: 'flex' },
                 alignItems: 'center',
                 gap: 1,
-                px: 2,
+                px: 1.5,
                 py: 0.75,
                 cursor: 'pointer',
-                borderRadius: 50,
-                bgcolor: 'rgba(255,255,255,0.6)',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.85)' },
-                transition: 'all 0.2s'
+                borderRadius: 2,
+                border: '2px solid #000',
+                backgroundColor: '#fff',
+                boxShadow: '2px 2px 0 #000',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                  transform: 'translate(-1px, -1px)',
+                  boxShadow: '3px 3px 0 #000',
+                },
+                transition: 'transform 120ms ease, box-shadow 120ms ease',
               }}
             >
               <Typography
                 variant="body2"
                 sx={{
-                  fontWeight: 700,
-                  color: '#1a237e',
-                  fontSize: 14
+                  fontWeight: 800,
+                  color: '#000',
+                  fontSize: 14,
+                  whiteSpace: 'nowrap',
+                  maxWidth: 140,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
                 }}
               >
                 {fullName || 'ユーザー'}
               </Typography>
-              <IconButton
-                size="small"
-                sx={{
-                  bgcolor: 'rgba(26,35,126,0.1)',
-                  '&:hover': { bgcolor: 'rgba(26,35,126,0.2)' },
-                  p: 0.5
-                }}
-              >
-                <AccountCircleIcon sx={{ color: '#1a237e', fontSize: 28 }} />
-              </IconButton>
+              <AccountCircleIcon sx={{ color: '#000' }} />
             </Box>
-            {/* Notification Icon */}
+
             <IconButton
               size="small"
               sx={{
-                bgcolor: 'rgba(255,255,255,0.6)',
-                color: '#1a237e',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.85)', transform: 'scale(1.1)' },
-                transition: 'all 0.2s'
+                width: 44,
+                height: 44,
+                border: '2px solid #000',
+                borderRadius: 2,
+                color: '#000',
+                backgroundColor: '#fff',
+                boxShadow: '2px 2px 0 #000',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                  transform: 'translate(-1px, -1px)',
+                  boxShadow: '3px 3px 0 #000',
+                },
+                transition: 'transform 120ms ease, box-shadow 120ms ease',
               }}
             >
               <NotificationsIcon fontSize="small" />
             </IconButton>
+
+            <IconButton
+              onClick={handleProfileClick}
+              size="small"
+              sx={{
+                display: { xs: 'inline-flex', sm: 'none' },
+                width: 44,
+                height: 44,
+                border: '2px solid #000',
+                borderRadius: 2,
+                color: '#000',
+                backgroundColor: '#fff',
+                boxShadow: '2px 2px 0 #000',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                  transform: 'translate(-1px, -1px)',
+                  boxShadow: '3px 3px 0 #000',
+                },
+                transition: 'transform 120ms ease, box-shadow 120ms ease',
+              }}
+            >
+              <AccountCircleIcon fontSize="small" />
+            </IconButton>
           </Stack>
         ) : (
-          <Stack direction="row" spacing={1.5} alignItems="center">
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexShrink: 0 }}>
             <Button
               component={Link}
               to="/login"
               size="small"
               variant="outlined"
               sx={{
-                px: 2.5,
-                borderRadius: 50,
+                borderRadius: 999,
+                border: '2px solid #000',
+                color: '#000',
+                fontWeight: 800,
                 textTransform: 'none',
-                fontWeight: 700,
-                color: '#1a237e',
-                bgcolor: 'rgba(255,255,255,0.5)',
-                borderColor: '#1a237e',
-                borderWidth: 2,
-                '&:hover': { 
-                  borderColor: '#1a237e', 
-                  backgroundColor: 'rgba(255,255,255,0.8)',
-                  borderWidth: 2
-                }
+                backgroundColor: '#fff',
+                boxShadow: '2px 2px 0 #000',
+                '&:hover': {
+                  backgroundColor: '#fff',
+                  transform: 'translate(-1px, -1px)',
+                  boxShadow: '3px 3px 0 #000',
+                  border: '2px solid #000',
+                },
+                transition: 'transform 120ms ease, box-shadow 120ms ease',
               }}
             >
               ログイン
@@ -224,20 +288,22 @@ const Header = () => {
               variant="contained"
               component={Link}
               to="/register"
+              disableElevation
               sx={{
-                px: 2.5,
-                borderRadius: 50,
-                textTransform: 'none',
-                fontWeight: 700,
+                borderRadius: 999,
+                backgroundColor: '#ff5b95',
                 color: '#fff',
-                background: 'linear-gradient(135deg, #e91e63 0%, #9c27b0 100%)',
-                boxShadow: '0 4px 15px rgba(233,30,99,0.4)',
-                '&:hover': { 
-                  boxShadow: '0 6px 20px rgba(233,30,99,0.5)', 
-                  background: 'linear-gradient(135deg, #d81b60 0%, #7b1fa2 100%)',
-                  transform: 'translateY(-2px)'
+                fontWeight: 900,
+                textTransform: 'none',
+                border: '2px solid #000',
+                boxShadow: '2px 2px 0 #000',
+                '&:hover': {
+                  backgroundColor: '#ff3f86',
+                  transform: 'translate(-1px, -1px)',
+                  boxShadow: '3px 3px 0 #000',
+                  border: '2px solid #000',
                 },
-                transition: 'all 0.3s'
+                transition: 'transform 120ms ease, box-shadow 120ms ease',
               }}
             >
               新規登録
