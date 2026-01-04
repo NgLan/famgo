@@ -226,7 +226,7 @@ const PlaceDetail = () => {
 
           {/* Right Column - Sidebar */}
           <div className="w-full md:w-[380px] flex-shrink-0">
-            <div className="md:sticky md:top-24 space-y-4">
+            <div className="md:sticky md:top-4 space-y-4">
 
               {/* Basic Info Card */}
               <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">

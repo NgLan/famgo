@@ -191,7 +191,7 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                                 ))}
                             </div>
                             <span className="text-lg font-bold">
-                                {rating > 0 ? `${rating}.0 / 5.0` : '評価を選択'}
+                                {rating > 0 ? `${rating}/5` : '評価を選択'}
                             </span>
                         </div>
                     </div>
@@ -230,8 +230,8 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'yes')}
                                                     className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'yes'
-                                                            ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
-                                                            : 'bg-white hover:bg-gray-100'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
                                                         }`}
                                                 />
                                             </td>
@@ -239,8 +239,8 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'no')}
                                                     className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'no'
-                                                            ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
-                                                            : 'bg-white hover:bg-gray-100'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
                                                         }`}
                                                 />
                                             </td>
@@ -248,8 +248,8 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'unknown')}
                                                     className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'unknown'
-                                                            ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
-                                                            : 'bg-white hover:bg-gray-100'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
                                                         }`}
                                                 />
                                             </td>
