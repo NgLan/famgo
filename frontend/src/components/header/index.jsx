@@ -33,11 +33,13 @@ const Header = () => {
   };
   return (
     <AppBar
-      position="static"
+      position="sticky"
       elevation={0}
       sx={{
+        top: 0,
         backgroundColor: '#fff',
         borderBottom: '2px solid #000',
+        zIndex: (theme) => theme.zIndex.appBar,
       }}
     >
       <Toolbar sx={{ minHeight: 72, gap: 2 }}>
