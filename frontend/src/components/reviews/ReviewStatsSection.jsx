@@ -63,9 +63,19 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
         return ((ratingDistribution[ratingValue] || 0) / totalReviews) * 100;
     };
 
+    // Get top facilities (sorted by "yes" count)
+    const getTopFacilities = () => {
+        const entries = Object.entries(facilitiesStats);
+        return entries
+            .sort((a, b) => (b[1].yes || 0) - (a[1].yes || 0))
+            .slice(0, 4);
+    };
+
+    const topFacilities = getTopFacilities();
+
     return (
         <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row gap-6">
                 {/* Left: Rating */}
                 <div className="text-center px-6 py-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-black rounded-lg">
                     <div className="text-5xl font-black">{avgRating.toFixed(1)}</div>
@@ -82,15 +92,50 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
                     <div className="text-xs text-gray-600 font-bold mt-1">({totalReviews} 件)</div>
                 </div>
 
-                {/* Right: Button */}
-                <button
-                    onClick={() => setOpenDetailsDialog(true)}
-                    className="flex-1 flex items-center justify-center gap-2 px-6 py-8 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
-                    style={{ backgroundColor: COLORS.blue }}
-                >
-                    <TrendingUp size={20} />
-                    <span className="text-lg">レビューを見る →</span>
-                </button>
+                {/* Right: Top Facilities */}
+                <div className="flex-1">
+                    <h3 className="text-lg font-black mb-3">サービス評価</h3>
+
+                    {topFacilities.length > 0 ? (
+                        <div className="space-y-2 mb-4">
+                            {topFacilities.map(([facility, stats]) => {
+                                const total = (stats.yes || 0) + (stats.no || 0) + (stats.unknown || 0);
+                                const yesPercentage = total > 0 ? ((stats.yes || 0) / total) * 100 : 0;
+
+                                return (
+                                    <div key={facility} className="flex items-center gap-3">
+                                        <span className="font-bold text-sm w-32 flex-shrink-0">
+                                            {FACILITY_LABELS[facility] || facility}
+                                        </span>
+                                        <div className="flex-1 h-6 bg-gray-200 border-2 border-black rounded-lg overflow-hidden">
+                                            <div
+                                                className="h-full transition-all"
+                                                style={{
+                                                    width: `${yesPercentage}%`,
+                                                    backgroundColor: COLORS.blue
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="font-bold text-sm w-16 text-right">
+                                            {stats.yes || 0} / {total}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 text-sm mb-4">まだサービス評価がありません</p>
+                    )}
+
+                    <button
+                        onClick={() => setOpenDetailsDialog(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
+                        style={{ backgroundColor: COLORS.yellow }}
+                    >
+                        <TrendingUp size={18} />
+                        <span>もっと見る</span>
+                    </button>
+                </div>
             </div>
 
 

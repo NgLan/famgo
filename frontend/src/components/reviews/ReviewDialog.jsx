@@ -57,12 +57,12 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                 `http://localhost:3000/api/reviews/my-review/${placeId}`,
                 { withCredentials: true }
             );
-            
+
             if (response.data.data) {
                 const existingData = response.data.data;
                 setRating(existingData.rating || 0);
                 setExistingReview(existingData);
-                
+
                 // Populate facilities
                 if (existingData.facilities) {
                     setFacilities(existingData.facilities);
@@ -229,31 +229,28 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                                             <td className="px-4 py-3 text-center border-r-2 border-black">
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'yes')}
-                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${
-                                                        facilities[facilityKey] === 'yes'
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'yes'
                                                             ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
                                                             : 'bg-white hover:bg-gray-100'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </td>
                                             <td className="px-4 py-3 text-center border-r-2 border-black">
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'no')}
-                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${
-                                                        facilities[facilityKey] === 'no'
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'no'
                                                             ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
                                                             : 'bg-white hover:bg-gray-100'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                                 <button
                                                     onClick={() => handleFacilityChange(facilityKey, 'unknown')}
-                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${
-                                                        facilities[facilityKey] === 'unknown'
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'unknown'
                                                             ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
                                                             : 'bg-white hover:bg-gray-100'
-                                                    }`}
+                                                        }`}
                                                 />
                                             </td>
                                         </tr>
