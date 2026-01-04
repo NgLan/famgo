@@ -226,14 +226,14 @@ const PlaceDetail = () => {
 
           {/* Right Column - Sidebar */}
           <div className="w-full md:w-[380px] flex-shrink-0">
-            <div className="md:sticky md:top-24 space-y-6">
+            <div className="md:sticky md:top-24 space-y-4">
 
               {/* Basic Info Card */}
-              <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]">
-                <h3 className="text-xl font-black mb-4">基本情報</h3>
-                <div className="border-t-2 border-black mb-4"></div>
+              <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+                <h3 className="text-lg font-black mb-3">基本情報</h3>
+                <div className="border-t-2 border-black mb-3"></div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {/* Price */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
@@ -281,7 +281,7 @@ const PlaceDetail = () => {
                   </div>
                 </div>
 
-                <div className="border-t-2 border-black my-4"></div>
+                <div className="border-t-2 border-black my-3"></div>
 
                 {/* Favorite Button */}
                 <button
@@ -307,8 +307,18 @@ const PlaceDetail = () => {
                       toast.error("お気に入り更新中にエラーが発生しました");
                     }
                   }}
+                  onMouseEnter={(e) => {
+                    if (!isFavorite) {
+                      e.currentTarget.style.backgroundColor = COLORS.pink;
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isFavorite) {
+                      e.currentTarget.style.backgroundColor = COLORS.blue;
+                    }
+                  }}
                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
-                  style={{ backgroundColor: isFavorite ? COLORS.red : 'white', color: isFavorite ? 'white' : 'black' }}
+                  style={{ backgroundColor: isFavorite ? COLORS.red : COLORS.blue, color: isFavorite ? 'white' : 'black' }}
                 >
                   <Heart size={20} className={isFavorite ? "fill-white" : ""} />
                   <span>{isFavorite ? "お気に入りを外す" : "お気に入りに追加"}</span>
@@ -316,9 +326,9 @@ const PlaceDetail = () => {
               </div>
 
               {/* Map Card */}
-              <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]">
-                <h3 className="text-xl font-black mb-4">地図上の場所</h3>
-                <div className="h-[300px] w-full rounded-lg border-2 border-black overflow-hidden mb-4">
+              <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+                <h3 className="text-lg font-black mb-3">地図上の場所</h3>
+                <div className="h-[220px] w-full rounded-lg border-2 border-black overflow-hidden mb-3">
                   {location?.coordinates ? (
                     <MapContainer
                       center={[location.coordinates[1], location.coordinates[0]]}
@@ -341,7 +351,12 @@ const PlaceDetail = () => {
                   )}
                 </div>
                 {location?.coordinates && (
-                  <button className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all" style={{ backgroundColor: COLORS.blue }}>
+                  <button
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all group"
+                    style={{ backgroundColor: COLORS.pink }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.blue}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.pink}
+                  >
                     <Navigation size={18} />
                     <span>行き方</span>
                   </button>

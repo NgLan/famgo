@@ -449,20 +449,29 @@ const CommentSection = ({ placeId, placeName }) => {
             {/* Phân trang */}
             {totalPages > 1 && (
                 <div className="flex justify-center mt-6 gap-2">
-                    {[...Array(totalPages)].map((_, index) => (
-                        <button
-                            key={index + 1}
-                            onClick={() => fetchComments(index + 1)}
-                            disabled={loading || page === index + 1}
-                            className={`px-4 py-2 border-2 border-black rounded-lg font-bold transition-all ${page === index + 1
-                                    ? 'shadow-[2px_2px_0_0_#000] translate-x-[-1px] translate-y-[-1px]'
+                    {[...Array(totalPages)].map((_, index) => {
+                        const pageNum = index + 1;
+                        const isCurrentPage = page === pageNum;
+                        const isEvenPage = pageNum % 2 === 0;
+                        const bgColor = isCurrentPage
+                            ? (isEvenPage ? COLORS.pink : COLORS.blue)
+                            : 'white';
+
+                        return (
+                            <button
+                                key={pageNum}
+                                onClick={() => fetchComments(pageNum)}
+                                disabled={isCurrentPage}
+                                className={`px-4 py-2 border-2 border-black rounded-lg font-bold transition-all ${isCurrentPage
+                                    ? 'shadow-[2px_2px_0_0_#000] translate-x-[-1px] translate-y-[-1px] cursor-default'
                                     : 'hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px]'
-                                } disabled:opacity-50`}
-                            style={{ backgroundColor: page === index + 1 ? COLORS.pink : 'white' }}
-                        >
-                            {index + 1}
-                        </button>
-                    ))}
+                                    }`}
+                                style={{ backgroundColor: bgColor }}
+                            >
+                                {pageNum}
+                            </button>
+                        );
+                    })}
                 </div>
             )}
 
