@@ -352,6 +352,10 @@ const PlaceDetail = () => {
                 </div>
                 {location?.coordinates && (
                   <button
+                    onClick={() => {
+                      const [lng, lat] = location.coordinates;
+                      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+                    }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all group"
                     style={{ backgroundColor: COLORS.pink }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.blue}
