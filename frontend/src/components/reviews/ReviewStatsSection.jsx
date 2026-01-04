@@ -8,6 +8,21 @@ const COLORS = {
     yellow: '#FDE24F',
 };
 
+const FACILITY_LABELS = {
+    parking: '駐車場',
+    restroom: 'トイレ',
+    diaper_changing: 'おむつ交換台',
+    parent_rest_area: '保護者休憩エリア',
+    dining_area: 'ダイニングエリア',
+    stroller_support: 'ベビーカーサポート',
+    medical_room: '医療室',
+    air_conditioning: 'エアコン',
+    wifi: 'Wi-Fi',
+    disability_access: '障害者アクセス',
+    locker: 'ロッカー',
+    safe_zone: '安全ゾーン'
+};
+
 const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
     const [stats, setStats] = useState(null);
     const [openDetailsDialog, setOpenDetailsDialog] = useState(false);
@@ -142,7 +157,7 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
                                                     className={`border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors`}
                                                 >
                                                     <td className="px-4 py-3 font-bold border-r-2 border-black">
-                                                        {facility}
+                                                        {FACILITY_LABELS[facility] || facility}
                                                     </td>
                                                     <td className="px-4 py-3 text-center font-bold border-r-2 border-black">
                                                         {stats.yes || 0}
