@@ -1,29 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
-import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    Box,
-    Stack,
-    Typography,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Radio,
-    RadioGroup,
-    FormControlLabel,
-    Paper,
-    Rating,
-    Alert
-} from '@mui/material';
+import { Star, X } from 'lucide-react';
 import axios from 'axios';
 import { getCookie } from '../../helpers/cookies.helper';
+
+const COLORS = {
+    bg: '#FFFBF5',
+    pink: '#FF90E8',
+    blue: '#5BC0EB',
+    yellow: '#FDE24F',
+};
 
 const FACILITY_LABELS = {
     parking: '駐車場',
@@ -71,12 +57,12 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
                 `http://localhost:3000/api/reviews/my-review/${placeId}`,
                 { withCredentials: true }
             );
-            
+
             if (response.data.data) {
                 const existingData = response.data.data;
                 setRating(existingData.rating || 0);
                 setExistingReview(existingData);
-                
+
                 // Populate facilities
                 if (existingData.facilities) {
                     setFacilities(existingData.facilities);
@@ -172,116 +158,136 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
         onClose();
     };
 
+    if (!open) return null;
+
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="md" fullWidth>
-            <DialogTitle sx={{ fontWeight: 700, fontSize: '1.3rem', textAlign: 'center' }}>
-                {existingReview ? 'レビューを編集' : 'レビューを送信'}
-            </DialogTitle>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0_0_#000] max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col" style={{ backgroundColor: COLORS.bg }}>
+                {/* Header */}
+                <div className="border-b-4 border-black p-6">
+                    <h2 className="text-2xl font-black text-center">
+                        {existingReview ? 'レビューを編集' : 'レビューを送信'}
+                    </h2>
+                </div>
 
-            <DialogContent sx={{ pt: 3 }}>
-                {/* 星評価セクション */}
-                <Box sx={{ mb: 4 }}>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        星評価
-                    </Typography>
-                    <Stack direction="row" alignItems="center" spacing={2}>
-                        <Rating
-                            value={rating}
-                            onChange={(event, newValue) => {
-                                setRating(newValue);
-                            }}
-                            size="large"
-                        />
-                        <Typography variant="body1" sx={{ ml: 2 }}>
-                            {rating > 0 ? `${rating}.0 / 5.0` : '評価を選択'}
-                        </Typography>
-                    </Stack>
-                </Box>
-
-                {/* サービスレビュー テーブル */}
-                <Box sx={{ mb: 3 }}>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        サービスレビュー
-                    </Typography>
-                    
-                    <TableContainer component={Paper} sx={{ boxShadow: 1 }}>
-                        <Table>
-                            <TableHead sx={{ bgcolor: '#f5f5f5' }}>
-                                <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, width: '40%' }}>
-                                        サービス名
-                                    </TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 700 }}>
-                                        ある
-                                    </TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 700 }}>
-                                        ない
-                                    </TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 700 }}>
-                                        気づかなかった
-                                    </TableCell>
-                                </TableRow>
-                            </TableHead>
-                            <TableBody>
-                                {FACILITY_KEYS.map((facilityKey) => (
-                                    <TableRow key={facilityKey} sx={{ '&:hover': { bgcolor: '#f9f9f9' } }}>
-                                        <TableCell sx={{ fontWeight: 500 }}>
-                                            {FACILITY_LABELS[facilityKey]}
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Radio
-                                                checked={facilities[facilityKey] === 'yes'}
-                                                onChange={() => handleFacilityChange(facilityKey, 'yes')}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Radio
-                                                checked={facilities[facilityKey] === 'no'}
-                                                onChange={() => handleFacilityChange(facilityKey, 'no')}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                        <TableCell align="center">
-                                            <Radio
-                                                checked={facilities[facilityKey] === 'unknown'}
-                                                onChange={() => handleFacilityChange(facilityKey, 'unknown')}
-                                                size="small"
-                                            />
-                                        </TableCell>
-                                    </TableRow>
+                {/* Content */}
+                <div className="overflow-y-auto p-6 space-y-6">
+                    {/* 星評価セクション */}
+                    <div className="bg-white border-2 border-black rounded-lg p-4 shadow-[2px_2px_0_0_#000]">
+                        <h3 className="text-lg font-black mb-3">星評価</h3>
+                        <div className="flex items-center gap-4">
+                            <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        onClick={() => setRating(star)}
+                                        className="transition-transform hover:scale-110"
+                                    >
+                                        <Star
+                                            size={32}
+                                            className={star <= rating ? "fill-yellow-400 text-yellow-400" : "fill-gray-300 text-gray-300"}
+                                        />
+                                    </button>
                                 ))}
-                            </TableBody>
-                        </Table>
-                    </TableContainer>
-                </Box>
+                            </div>
+                            <span className="text-lg font-bold">
+                                {rating > 0 ? `${rating}/5` : '評価を選択'}
+                            </span>
+                        </div>
+                    </div>
 
-                {/* エラーメッセージ */}
-                {error && (
-                    <Alert severity="error" sx={{ mb: 2 }}>
-                        {error}
-                    </Alert>
-                )}
-            </DialogContent>
+                    {/* サービスレビュー テーブル */}
+                    <div>
+                        <h3 className="text-lg font-black mb-3">サービスレビュー</h3>
+                        <div className="border-2 border-black rounded-lg overflow-hidden shadow-[2px_2px_0_0_#000]">
+                            <table className="w-full bg-white">
+                                <thead>
+                                    <tr className="border-b-2 border-black" style={{ backgroundColor: COLORS.pink }}>
+                                        <th className="px-4 py-3 text-left font-black text-sm border-r-2 border-black">
+                                            サービス名
+                                        </th>
+                                        <th className="px-4 py-3 text-center font-black text-sm border-r-2 border-black">
+                                            ある
+                                        </th>
+                                        <th className="px-4 py-3 text-center font-black text-sm border-r-2 border-black">
+                                            ない
+                                        </th>
+                                        <th className="px-4 py-3 text-center font-black text-sm">
+                                            気づかなかった
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {FACILITY_KEYS.map((facilityKey, index) => (
+                                        <tr
+                                            key={facilityKey}
+                                            className="border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <td className="px-4 py-3 font-bold border-r-2 border-black">
+                                                {FACILITY_LABELS[facilityKey]}
+                                            </td>
+                                            <td className="px-4 py-3 text-center border-r-2 border-black">
+                                                <button
+                                                    onClick={() => handleFacilityChange(facilityKey, 'yes')}
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'yes'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
+                                                        }`}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-center border-r-2 border-black">
+                                                <button
+                                                    onClick={() => handleFacilityChange(facilityKey, 'no')}
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'no'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
+                                                        }`}
+                                                />
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <button
+                                                    onClick={() => handleFacilityChange(facilityKey, 'unknown')}
+                                                    className={`w-6 h-6 rounded-full border-2 border-black transition-all ${facilities[facilityKey] === 'unknown'
+                                                        ? 'bg-blue-500 shadow-[2px_2px_0_0_#000]'
+                                                        : 'bg-white hover:bg-gray-100'
+                                                        }`}
+                                                />
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-            <DialogActions sx={{ p: 2.5, gap: 1 }}>
-                <Button
-                    variant="outlined"
-                    onClick={handleClose}
-                    disabled={loading}
-                >
-                    閉じる
-                </Button>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmit}
-                    disabled={!isFormValid() || loading}
-                >
-                    {loading ? '送信中...' : 'レビューを送信'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+                    {/* エラーメッセージ */}
+                    {error && (
+                        <div className="bg-red-100 border-2 border-black rounded-lg p-4 font-bold text-red-800">
+                            {error}
+                        </div>
+                    )}
+                </div>
+
+                {/* Footer */}
+                <div className="border-t-4 border-black p-6 flex gap-3">
+                    <button
+                        onClick={handleClose}
+                        disabled={loading}
+                        className="flex-1 px-6 py-3 bg-white border-2 border-black rounded-lg font-bold hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        閉じる
+                    </button>
+                    <button
+                        onClick={handleSubmit}
+                        disabled={!isFormValid() || loading}
+                        className="flex-1 px-6 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        style={{ backgroundColor: COLORS.pink }}
+                    >
+                        {loading ? '送信中...' : 'レビューを送信'}
+                    </button>
+                </div>
+            </div>
+        </div>
     );
 };
 

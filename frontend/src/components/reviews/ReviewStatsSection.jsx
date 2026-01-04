@@ -1,24 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import {
-    Box,
-    Paper,
-    Stack,
-    Typography,
-    LinearProgress,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
-    Grid
-} from '@mui/material';
+import { Star, TrendingUp } from 'lucide-react';
 import axios from 'axios';
+
+const COLORS = {
+    pink: '#FF90E8',
+    blue: '#5BC0EB',
+    yellow: '#FDE24F',
+};
+
+const FACILITY_LABELS = {
+    parking: '駐車場',
+    restroom: 'トイレ',
+    diaper_changing: 'おむつ交換台',
+    parent_rest_area: '保護者休憩エリア',
+    dining_area: 'ダイニングエリア',
+    stroller_support: 'ベビーカーサポート',
+    medical_room: '医療室',
+    air_conditioning: 'エアコン',
+    wifi: 'Wi-Fi',
+    disability_access: '障害者アクセス',
+    locker: 'ロッカー',
+    safe_zone: '安全ゾーン'
+};
 
 const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
     const [stats, setStats] = useState(null);
@@ -60,130 +63,178 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
         return ((ratingDistribution[ratingValue] || 0) / totalReviews) * 100;
     };
 
-    return (
-        <Paper sx={{ p: 3, borderRadius: 2, boxShadow: '0 4px 12px rgba(0,0,0,0.08)' }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 3 }}>
-                {/* Left: Rating */}
-                <Box sx={{ textAlign: 'center' }}>
-                    <Typography variant="h2" fontWeight={800}>
-                        {avgRating.toFixed(1)}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                        / 5.0
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                        ({totalReviews} 件)
-                    </Typography>
-                </Box>
+    // Get top facilities (sorted by "yes" count)
+    const getTopFacilities = () => {
+        const entries = Object.entries(facilitiesStats);
+        return entries
+            .sort((a, b) => (b[1].yes || 0) - (a[1].yes || 0))
+            .slice(0, 4);
+    };
 
-                {/* Right: Button */}
-                <Box
-                    onClick={() => setOpenDetailsDialog(true)}
-                    sx={{
-                        cursor: 'pointer',
-                        borderRadius: 1,
-                        bgcolor: '#f9f9f9',
-                        '&:hover': { bgcolor: '#f0f0f0' },
-                        transition: 'background-color 0.2s',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        width: 860,
-                        height: 110,
-                        flexShrink: 0,
-                    }}
-                >
-                    <Typography variant="body1" fontWeight={600} color="primary">
-                        レビューを見る →
-                    </Typography>
-                </Box>
-            </Box>
+    const topFacilities = getTopFacilities();
+
+    return (
+        <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]">
+            <div className="flex flex-col md:flex-row gap-6 md:items-center">
+                {/* Left: Rating */}
+                <div className="text-center px-6 py-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-black rounded-lg flex-shrink-0">
+                    <div className="text-5xl font-black">{avgRating.toFixed(1)}</div>
+                    <div className="text-sm text-gray-600 font-bold mt-1">/ 5.0</div>
+                    <div className="flex items-center justify-center gap-1 mt-2">
+                        {[...Array(5)].map((_, index) => (
+                            <Star
+                                key={index}
+                                size={16}
+                                className={index < Math.round(avgRating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-300 text-gray-300"}
+                            />
+                        ))}
+                    </div>
+                    <div className="text-xs text-gray-600 font-bold mt-1">({totalReviews} 件)</div>
+                </div>
+
+                {/* Right: Top Facilities */}
+                <div className="flex-1">
+                    <h3 className="text-lg font-black mb-3">サービス評価</h3>
+
+                    {topFacilities.length > 0 ? (
+                        <div className="space-y-2 mb-4">
+                            {topFacilities.map(([facility, stats]) => {
+                                const total = (stats.yes || 0) + (stats.no || 0) + (stats.unknown || 0);
+                                const yesPercentage = total > 0 ? ((stats.yes || 0) / total) * 100 : 0;
+
+                                return (
+                                    <div key={facility} className="flex items-center gap-3">
+                                        <span className="font-bold text-sm w-32 flex-shrink-0">
+                                            {FACILITY_LABELS[facility] || facility}
+                                        </span>
+                                        <div className="flex-1 h-6 bg-gray-200 border-2 border-black rounded-lg overflow-hidden">
+                                            <div
+                                                className="h-full transition-all"
+                                                style={{
+                                                    width: `${yesPercentage}%`,
+                                                    backgroundColor: COLORS.blue
+                                                }}
+                                            />
+                                        </div>
+                                        <span className="font-bold text-sm w-16 text-right">
+                                            {stats.yes || 0} / {total}
+                                        </span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <p className="text-gray-500 text-sm mb-4">まだサービス評価がありません</p>
+                    )}
+
+                    <button
+                        onClick={() => setOpenDetailsDialog(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
+                        style={{ backgroundColor: COLORS.yellow }}
+                    >
+                        <TrendingUp size={18} />
+                        <span>もっと見る</span>
+                    </button>
+                </div>
+            </div>
 
 
             {/* 詳細ダイアログ */}
-            <Dialog open={openDetailsDialog} onClose={() => setOpenDetailsDialog(false)} maxWidth="sm" fullWidth>
-                <DialogTitle sx={{ fontWeight: 700, textAlign: 'center' }}>
-                    レビューの詳細
-                </DialogTitle>
-                <DialogContent sx={{ pt: 3 }}>
-                    {/* 評価分布 */}
-                    <Box sx={{ mb: 3 }}>
-                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                            評価分布
-                        </Typography>
-                        {[5, 4, 3, 2, 1].map((rating) => (
-                            <Box key={rating} sx={{ mb: 2 }}>
-                                <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Typography variant="body2" sx={{ minWidth: 40 }}>
-                                        {rating}★
-                                    </Typography>
-                                    <Box sx={{ flexGrow: 1 }}>
-                                        <LinearProgress
-                                            variant="determinate"
-                                            value={getRatingPercentage(rating)}
-                                            sx={{ height: 12, borderRadius: 6 }}
-                                        />
-                                    </Box>
-                                    <Typography variant="body2" sx={{ minWidth: 50, textAlign: 'right' }}>
-                                        {ratingDistribution[rating] || 0} ({getRatingPercentage(rating).toFixed(0)}%)
-                                    </Typography>
-                                </Stack>
-                            </Box>
-                        ))}
-                    </Box>
+            {openDetailsDialog && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white border-4 border-black rounded-2xl shadow-[8px_8px_0_0_#000] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white border-b-2 border-black p-6 z-10">
+                            <h2 className="text-2xl font-black text-center">レビューの詳細</h2>
+                        </div>
 
-                    {/* サービス統計テーブル */}
-                    <Box>
-                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                            サービス統計
-                        </Typography>
-                        <TableContainer component={Paper} variant="outlined">
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow sx={{ bgcolor: '#f5f5f5' }}>
-                                        <TableCell sx={{ fontWeight: 600 }}>
-                                            サービス名
-                                        </TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                            ある
-                                        </TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                            ない
-                                        </TableCell>
-                                        <TableCell align="center" sx={{ fontWeight: 600 }}>
-                                            気づかなかった
-                                        </TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {Object.entries(facilitiesStats).map(([facility, stats]) => (
-                                        <TableRow key={facility} sx={{ '&:hover': { bgcolor: '#f9f9f9' } }}>
-                                            <TableCell sx={{ py: 1 }}>
-                                                {facility}
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ py: 1 }}>
-                                                {stats.yes || 0}
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ py: 1 }}>
-                                                {stats.no || 0}
-                                            </TableCell>
-                                            <TableCell align="center" sx={{ py: 1 }}>
-                                                {stats.unknown || 0}
-                                            </TableCell>
-                                        </TableRow>
+                        {/* Content */}
+                        <div className="p-6">
+                            {/* 評価分布 */}
+                            <div className="mb-6">
+                                <h3 className="text-lg font-black mb-4">評価分布</h3>
+                                <div className="space-y-3">
+                                    {[5, 4, 3, 2, 1].map((rating) => (
+                                        <div key={rating} className="flex items-center gap-3">
+                                            <span className="font-bold text-sm w-10">{rating}★</span>
+                                            <div className="flex-1 h-6 bg-gray-200 border-2 border-black rounded-lg overflow-hidden">
+                                                <div
+                                                    className="h-full transition-all"
+                                                    style={{
+                                                        width: `${getRatingPercentage(rating)}%`,
+                                                        backgroundColor: rating >= 4 ? COLORS.yellow : rating >= 3 ? COLORS.blue : COLORS.pink
+                                                    }}
+                                                />
+                                            </div>
+                                            <span className="font-bold text-sm w-24 text-right">
+                                                {ratingDistribution[rating] || 0} ({getRatingPercentage(rating).toFixed(0)}%)
+                                            </span>
+                                        </div>
                                     ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    </Box>
-                </DialogContent>
-                <DialogActions sx={{ p: 2 }}>
-                    <Button onClick={() => setOpenDetailsDialog(false)} variant="contained">
-                        閉じる
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Paper>
+                                </div>
+                            </div>
+
+                            {/* サービス統計テーブル */}
+                            <div>
+                                <h3 className="text-lg font-black mb-4">サービス統計</h3>
+                                <div className="border-2 border-black rounded-lg overflow-hidden">
+                                    <table className="w-full">
+                                        <thead>
+                                            <tr className="border-b-2 border-black" style={{ backgroundColor: COLORS.pink }}>
+                                                <th className="px-4 py-3 text-left font-black text-sm border-r-2 border-black">
+                                                    サービス名
+                                                </th>
+                                                <th className="px-4 py-3 text-center font-black text-sm border-r-2 border-black">
+                                                    ある
+                                                </th>
+                                                <th className="px-4 py-3 text-center font-black text-sm border-r-2 border-black">
+                                                    ない
+                                                </th>
+                                                <th className="px-4 py-3 text-center font-black text-sm">
+                                                    気づかなかった
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white">
+                                            {Object.entries(facilitiesStats).map(([facility, stats], index) => (
+                                                <tr
+                                                    key={facility}
+                                                    className={`border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors`}
+                                                >
+                                                    <td className="px-4 py-3 font-bold border-r-2 border-black">
+                                                        {FACILITY_LABELS[facility] || facility}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-bold border-r-2 border-black">
+                                                        {stats.yes || 0}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-bold border-r-2 border-black">
+                                                        {stats.no || 0}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-center font-bold">
+                                                        {stats.unknown || 0}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="sticky bottom-0 bg-white border-t-2 border-black p-6">
+                            <button
+                                onClick={() => setOpenDetailsDialog(false)}
+                                className="w-full px-6 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
+                                style={{ backgroundColor: COLORS.yellow }}
+                            >
+                                閉じる
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
     );
 };
 
