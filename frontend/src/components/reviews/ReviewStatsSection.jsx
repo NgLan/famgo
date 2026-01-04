@@ -75,9 +75,9 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
 
     return (
         <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]">
-            <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex flex-col md:flex-row gap-6 md:items-center">
                 {/* Left: Rating */}
-                <div className="text-center px-6 py-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-black rounded-lg">
+                <div className="text-center px-6 py-4 bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-black rounded-lg flex-shrink-0">
                     <div className="text-5xl font-black">{avgRating.toFixed(1)}</div>
                     <div className="text-sm text-gray-600 font-bold mt-1">/ 5.0</div>
                     <div className="flex items-center justify-center gap-1 mt-2">
