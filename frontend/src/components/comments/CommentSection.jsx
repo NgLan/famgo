@@ -57,7 +57,7 @@ const CommentSection = ({ placeId, placeName }) => {
                     withCredentials: true
                 }
             );
-            
+
             if (response.data && response.data.success) {
                 setComments(response.data.data || []);
                 setPage(pageNum);
@@ -93,7 +93,7 @@ const CommentSection = ({ placeId, placeName }) => {
 
         try {
             setSubmitting(true);
-            
+
             const response = await axios.post(
                 'http://localhost:3000/api/comments',
                 {
@@ -107,7 +107,7 @@ const CommentSection = ({ placeId, placeName }) => {
 
             if (response.data && response.data.success) {
                 setNewComment('');
-                
+
                 // Thêm comment mới trực tiếp vào danh sách (nếu đang ở trang 1)
                 if (page === 1 && response.data.data) {
                     setComments(prevComments => [response.data.data, ...prevComments]);
@@ -115,7 +115,7 @@ const CommentSection = ({ placeId, placeName }) => {
                     // Nếu ở trang khác, reload lại trang 1
                     await fetchComments(1);
                 }
-                
+
                 //alert('Bình luận thành công!');
             } else {
                 throw new Error(response.data?.message || 'Lỗi không xác định');
@@ -158,7 +158,7 @@ const CommentSection = ({ placeId, placeName }) => {
 
         try {
             setSubmitting(true);
-            
+
             const response = await axios.put(
                 `http://localhost:3000/api/comments/${editingId}`,
                 { content: editContent.trim() },
@@ -181,7 +181,7 @@ const CommentSection = ({ placeId, placeName }) => {
                     // Nếu không có data, reload từ server
                     await fetchComments(page);
                 }
-                
+
                 setEditingId(null);
                 setEditContent('');
                 toast.success('コメントが正常に更新されました！');
@@ -216,7 +216,7 @@ const CommentSection = ({ placeId, placeName }) => {
     const handleDeleteConfirm = async () => {
         try {
             setSubmitting(true);
-            
+
             const response = await axios.delete(
                 `http://localhost:3000/api/comments/${deleteCommentId}`,
                 {
@@ -229,7 +229,7 @@ const CommentSection = ({ placeId, placeName }) => {
                 setComments(prevComments =>
                     prevComments.filter(comment => comment._id !== deleteCommentId)
                 );
-                
+
                 setOpenDeleteDialog(false);
                 setDeleteCommentId(null);
                 toast.success('コメントが正常に削除されました！');
@@ -454,11 +454,10 @@ const CommentSection = ({ placeId, placeName }) => {
                             key={index + 1}
                             onClick={() => fetchComments(index + 1)}
                             disabled={loading || page === index + 1}
-                            className={`px-4 py-2 border-2 border-black rounded-lg font-bold transition-all ${
-                                page === index + 1
+                            className={`px-4 py-2 border-2 border-black rounded-lg font-bold transition-all ${page === index + 1
                                     ? 'shadow-[2px_2px_0_0_#000] translate-x-[-1px] translate-y-[-1px]'
                                     : 'hover:shadow-[2px_2px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px]'
-                            } disabled:opacity-50`}
+                                } disabled:opacity-50`}
                             style={{ backgroundColor: page === index + 1 ? COLORS.pink : 'white' }}
                         >
                             {index + 1}

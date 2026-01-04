@@ -137,8 +137,8 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
                                         </thead>
                                         <tbody className="bg-white">
                                             {Object.entries(facilitiesStats).map(([facility, stats], index) => (
-                                                <tr 
-                                                    key={facility} 
+                                                <tr
+                                                    key={facility}
                                                     className={`border-b border-black last:border-b-0 hover:bg-gray-50 transition-colors`}
                                                 >
                                                     <td className="px-4 py-3 font-bold border-r-2 border-black">
