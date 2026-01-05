@@ -440,7 +440,7 @@ const ScheduleCreate = () => {
             <div className="timeline-header">
               <label className="form-label">タイムライン</label>
               <p className="timeline-note">
-                <Clock size={16} className="inline-icon" style={{ color: 'white' }} />
+                <Clock size={16} className="inline-icon" style={{ color: '#333' }} />
                 各項目の時間は、その場所での滞在時間です（移動時間は含まれません）
               </p>
             </div>
@@ -458,7 +458,7 @@ const ScheduleCreate = () => {
                 <div className="timeline-item-header">
                   <div className="time-inputs">
                     <div className="time-input-group">
-                      <Clock size={16} className="time-icon" />
+                      <Clock size={16} className="time-icon" style={{ color: '#333' }} />
                       <input
                         type="time"
                         className="time-input"
@@ -474,7 +474,7 @@ const ScheduleCreate = () => {
                     </div>
                     <span className="time-separator">-</span>
                     <div className="time-input-group">
-                      <Clock size={16} className="time-icon" />
+                      <Clock size={16} className="time-icon" style={{ color: '#333' }} />
                       <input
                         type="time"
                         className="time-input"
@@ -522,7 +522,7 @@ const ScheduleCreate = () => {
                       onClick={() => removeTimelineItem(item.id)}
                       title="削除"
                     >
-                      <Trash2 size={20} />
+                      <Trash2 size={20} style={{ color: '#333' }} />
                     </button>
                   </div>
                 </div>                <div className="timeline-item-content">
@@ -632,14 +632,14 @@ const ScheduleCreate = () => {
                     {/* Transport */}
                     <div className="footer-item">
                       <label className="footer-label">
-                        <Car size={16} className="inline-icon" style={{ color: '#5BC0EB' }} />
+                        <Car size={16} className="inline-icon" style={{ color: '#333' }} />
                         移動手段
                       </label>
                       <div className="select-with-icon">
-                        {item.transport === '車' && <Car size={18} className="select-icon" style={{ color: '#5BC0EB' }} />}
-                        {item.transport === 'バイク' && <Bike size={18} className="select-icon" style={{ color: '#FF90E8' }} />}
-                        {item.transport === '徒歩' && <Walk size={18} className="select-icon" style={{ color: '#FDE24F' }} />}
-                        {item.transport === 'バス' && <Bus size={18} className="select-icon" style={{ color: '#9B59B6' }} />}
+                        {item.transport === '車' && <Car size={18} className="select-icon" style={{ color: '#333' }} />}
+                        {item.transport === 'バイク' && <Bike size={18} className="select-icon" style={{ color: '#333' }} />}
+                        {item.transport === '徒歩' && <Walk size={18} className="select-icon" style={{ color: '#333' }} />}
+                        {item.transport === 'バス' && <Bus size={18} className="select-icon" style={{ color: '#333' }} />}
                         <select
                           className="footer-select with-icon-select"
                           value={item.transport}
@@ -656,7 +656,7 @@ const ScheduleCreate = () => {
                     {/* Price Range */}
                     <div className="footer-item footer-item-price">
                       <label className="footer-label">
-                        <Banknote size={16} className="inline-icon" style={{ color: '#27ae60' }} />
+                        <Banknote size={16} className="inline-icon" style={{ color: '#333' }} />
                         金額
                       </label>
                       <div className="price-range-inputs">
@@ -725,7 +725,7 @@ const ScheduleCreate = () => {
           {/* Date Picker */}
           <div className="form-group">
             <label className="form-label">
-              <Calendar size={16} className="inline-icon" style={{ color: '#FF90E8' }} />
+              <Calendar size={16} className="inline-icon" style={{ color: '#333' }} />
               実施日
             </label>
             <input
@@ -750,7 +750,7 @@ const ScheduleCreate = () => {
           {/* Cover Image */}
           <div className="form-group">
             <label className="form-label">
-              <ImageIcon size={16} className="inline-icon" style={{ color: '#5BC0EB' }} />
+              <ImageIcon size={16} className="inline-icon" style={{ color: '#333' }} />
               カバー画像
             </label>
             <div className="cover-image-upload">
@@ -779,7 +779,7 @@ const ScheduleCreate = () => {
           {/* Tags */}
           <div className="form-group">
             <label className="form-label">
-              <TagIcon size={16} className="inline-icon" style={{ color: '#FDE24F' }} />
+              <TagIcon size={16} className="inline-icon" style={{ color: '#333' }} />
               タグ
             </label>
             <div className="tags-input-wrapper">
@@ -799,7 +799,7 @@ const ScheduleCreate = () => {
             <div className="tags-list">
               {formData.tags.map((tag, index) => (
                 <span key={index} className="tag">
-                  <TagIcon size={12} className="inline-icon" style={{ color: 'white' }} />
+                  <TagIcon size={12} className="inline-icon" style={{ color: '#fff' }} />
                   {tag}
                   <button className="tag-remove" onClick={() => removeTag(tag)}>
                     <X size={12} />
