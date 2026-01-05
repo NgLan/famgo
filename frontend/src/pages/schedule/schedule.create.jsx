@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './schedule.create.css';
 import { toast } from 'react-toastify';
+import { Calendar, Image, Tag, Clock, MapPin, Trash2, GripVertical, Plus } from 'lucide-react';
 
 const CLOUDINARY_UPLOAD_PRESET = 'itss1_upload'; // Thay bằng preset của bạn
 const CLOUDINARY_CLOUD_NAME = 'dxudvl25z'; // Thay bằng cloud name của bạn
@@ -19,7 +20,7 @@ const ScheduleCreate = () => {
   const [activeMenu, setActiveMenu] = useState(null);
   const [draggedItem, setDraggedItem] = useState(null);
   const [uploading, setUploading] = useState(false);
-  
+
   // Place search states
   const [placeSearchResults, setPlaceSearchResults] = useState({});
   const [placeSearchLoading, setPlaceSearchLoading] = useState({});
@@ -76,7 +77,7 @@ const ScheduleCreate = () => {
       const response = await fetch(
         `http://localhost:3000/api/places/search?keyword=${encodeURIComponent(keyword)}`
       );
-      
+
       if (!response.ok) {
         throw new Error('Failed to search places');
       }
@@ -101,7 +102,7 @@ const ScheduleCreate = () => {
     updateTimelineItem(itemId, 'selectedPlace', null);
     updateTimelineItem(itemId, 'placeId', null);
     setActivePlaceDropdown(itemId);
-    
+
     // Debounce search
     clearTimeout(window.placeSearchTimeout);
     window.placeSearchTimeout = setTimeout(() => {
@@ -133,18 +134,18 @@ const ScheduleCreate = () => {
   // Handle drop
   const handleDrop = (e, targetId) => {
     e.preventDefault();
-    
+
     if (draggedItem === targetId) return;
-    
+
     const draggedIndex = formData.items.findIndex(item => item.id === draggedItem);
     const targetIndex = formData.items.findIndex(item => item.id === targetId);
-    
+
     if (draggedIndex === -1 || targetIndex === -1) return;
-    
+
     const newItems = [...formData.items];
     const [removed] = newItems.splice(draggedIndex, 1);
     newItems.splice(targetIndex, 0, removed);
-    
+
     setFormData({ ...formData, items: newItems });
     setDraggedItem(null);
   };
@@ -158,10 +159,10 @@ const ScheduleCreate = () => {
   const moveTimelineItem = (id, direction) => {
     const index = formData.items.findIndex(item => item.id === id);
     if (index === -1) return;
-    
+
     const newIndex = direction === 'up' ? index - 1 : index + 1;
     if (newIndex < 0 || newIndex >= formData.items.length) return;
-    
+
     const newItems = [...formData.items];
     [newItems[index], newItems[newIndex]] = [newItems[newIndex], newItems[index]];
     setFormData({ ...formData, items: newItems });
@@ -180,7 +181,7 @@ const ScheduleCreate = () => {
       image: null,
       caution: '',
       note: '',
-      transport: 'Ô tô',
+      transport: '車',
       priceMin: '',
       priceMax: ''
     };
@@ -211,17 +212,17 @@ const ScheduleCreate = () => {
     if (file) {
       try {
         setUploading(true);
-        
+
         // Upload to Cloudinary
         const imageUrl = await uploadToCloudinary(file);
-        
+
         if (id) {
           updateTimelineItem(id, 'image', imageUrl);
         } else {
           setFormData({ ...formData, coverImage: imageUrl });
         }
       } catch (error) {
-        alert('Đã xảy ra lỗi khi tải ảnh lên!');
+        toast.error('画像のアップロードに失敗しました！');
         console.error('Image upload error:', error);
       } finally {
         setUploading(false);
@@ -250,12 +251,12 @@ const ScheduleCreate = () => {
     try {
       // Validate form
       if (!formData.title.trim()) {
-        toast.error('Vui lòng nhập tiêu đề');
+        toast.error('タイトルを入力してください');
         return;
       }
 
       if (formData.items.length === 0) {
-        toast.error('Vui lòng thêm ít nhất một item vào kế hoạch');
+        toast.error('少なくとも1つの項目を追加してください');
         return;
       }
 
@@ -295,19 +296,19 @@ const ScheduleCreate = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Gửi cookies
+        credentials: 'include', // クッキーを送信
         body: JSON.stringify(dayPlanData)
       });
 
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(result.message || 'Có lỗi xảy ra');
+        throw new Error(result.message || 'エラーが発生しました');
       }
 
-      toast.success('Tạo kế hoạch thành công!');
+      toast.success('プラン作成成功！');
       console.log('Created day plan:', result.data);
-      
+
       // Reset form
       setFormData({
         title: '',
@@ -317,10 +318,10 @@ const ScheduleCreate = () => {
         tags: [],
         items: []
       });
-      
+
     } catch (error) {
       console.error('Error:', error);
-      alert(error.message || 'Có lỗi xảy ra!');
+      toast.error(error.message || 'エラーが発生しました！');
     } finally {
       setUploading(false);
     }
@@ -329,7 +330,7 @@ const ScheduleCreate = () => {
   // Handle save draft
   const handleSaveDraft = () => {
     console.log('Saving draft:', formData);
-    alert('Đã lưu nháp!');
+    toast.info('下書き保存しました！');
   };
 
   return (
@@ -371,8 +372,8 @@ const ScheduleCreate = () => {
             </div>
 
             {formData.items.map((item, index) => (
-              <div 
-                key={item.id} 
+              <div
+                key={item.id}
                 className={`timeline-item ${draggedItem === item.id ? 'dragging' : ''}`}
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, item.id)}
@@ -416,8 +417,8 @@ const ScheduleCreate = () => {
                   </div>
                   <div className="timeline-actions">
                     <div className="menu-wrapper">
-                      <button 
-                        className="btn-icon" 
+                      <button
+                        className="btn-icon"
                         title="Menu"
                         onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)}
                       >
@@ -425,14 +426,14 @@ const ScheduleCreate = () => {
                       </button>
                       {activeMenu === item.id && (
                         <div className="dropdown-menu">
-                          <button 
+                          <button
                             className="menu-item"
                             onClick={() => { moveTimelineItem(item.id, 'up'); setActiveMenu(null); }}
                             disabled={index === 0}
                           >
                             ↑ 上に移動
                           </button>
-                          <button 
+                          <button
                             className="menu-item"
                             onClick={() => { moveTimelineItem(item.id, 'down'); setActiveMenu(null); }}
                             disabled={index === formData.items.length - 1}
@@ -557,16 +558,16 @@ const ScheduleCreate = () => {
                   <div className="timeline-item-footer">
                     {/* Transport */}
                     <div className="footer-item">
-                      <label className="footer-label">車両</label>
+                      <label className="footer-label">🚗 移動手段</label>
                       <select
                         className="footer-select"
                         value={item.transport}
                         onChange={(e) => updateTimelineItem(item.id, 'transport', e.target.value)}
                       >
-                        <option value="Ô tô">🚗 Ô tô</option>
-                        <option value="Xe máy">🏍️ Xe máy</option>
-                        <option value="Đi bộ">🚶 Đi bộ</option>
-                        <option value="Xe bus">🚌 Xe bus</option>
+                        <option value="車">🚗 車</option>
+                        <option value="バイク">🏍️ バイク</option>
+                        <option value="徒歩">🚶 徒歩</option>
+                        <option value="バス">🚌 バス</option>
                       </select>
                     </div>
 
@@ -610,7 +611,7 @@ const ScheduleCreate = () => {
 
             {/* Add Timeline Button */}
             <button className="btn-add-timeline" onClick={addTimelineItem}>
-              + タイムライン項目
+              ➕ タイムライン項目を追加
             </button>
           </div>
         </div>
@@ -619,25 +620,25 @@ const ScheduleCreate = () => {
         <div className="right-column">
           {/* Action Buttons */}
           <div className="action-buttons">
-            <button 
-              className="btn-secondary" 
+            <button
+              className="btn-secondary"
               onClick={handleSaveDraft}
               disabled={uploading}
             >
-              {uploading ? 'Đang xử lý...' : '下書き保存'}
+              {uploading ? '処理中...' : '下書き保存'}
             </button>
-            <button 
-              className="btn-primary" 
+            <button
+              className="btn-primary"
               onClick={handleSubmit}
               disabled={uploading}
             >
-              {uploading ? 'Đang xử lý...' : '公開'}
+              {uploading ? '処理中...' : '公開'}
             </button>
           </div>
 
           {/* Date Picker */}
           <div className="form-group">
-            <label className="form-label">実施</label>
+            <label className="form-label">📅 実施日</label>
             <input
               type="date"
               className="form-input"
@@ -647,7 +648,7 @@ const ScheduleCreate = () => {
                 const selectedDate = new Date(e.target.value);
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                
+
                 if (selectedDate < today) {
                   toast.warning('過去の日付は選択できません');
                   return;
@@ -659,7 +660,7 @@ const ScheduleCreate = () => {
 
           {/* Cover Image */}
           <div className="form-group">
-            <label className="form-label">カバー画像</label>
+            <label className="form-label">📸 カバー画像</label>
             <div className="cover-image-upload">
               {formData.coverImage ? (
                 <img src={formData.coverImage} alt="Cover" className="cover-preview" />
@@ -683,7 +684,7 @@ const ScheduleCreate = () => {
 
           {/* Tags */}
           <div className="form-group">
-            <label className="form-label">タグ</label>
+            <label className="form-label">🏷️ タグ</label>
             <div className="tags-input-wrapper">
               <input
                 type="text"
