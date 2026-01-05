@@ -1,25 +1,25 @@
-/* Schedule Detail - 3D Effect Styling */
+/* Schedule Detail - Gitingest Style */
 
-/* Giữ nguyên các biến màu (:root) */
 :root {
-  --primary-blue: #56B5DD;
-  --primary-pink: #FF90D8;
+  --primary-blue: #5BC0EB;
+  --primary-pink: #FF90E8;
+  --primary-yellow: #FDE24F;
   --primary-orange: #FFB74F;
   --bg-cream: #FFFBF5;
   --bg-white: #FFFFFF;
-  --text-dark: #2C3E50;
-  --shadow-strong: 4px 4px 0px #000; 
+  --text-dark: #000000;
+  --shadow-strong: 4px 4px 0px #000;
   --shadow-medium: 3px 3px 0px #000;
   --shadow-light: 2px 2px 0px #000;
   --border-thick: 3px solid #000;
   --border-medium: 2px solid #000;
 }
 
-/* --- Wrapper chính cho trang Detail --- */
+/* Main Detail Page Wrapper */
 .detail-page-wrapper {
-  background: linear-gradient(135deg, #FFF9E6 0%, #FFE8CC 100%) !important;
+  background: var(--bg-cream) !important;
   width: 100%;
-  min-height: 100vh; /* Đảm bảo luôn full màn hình */
+  min-height: 100vh;
   box-sizing: border-box;
 }
 
@@ -118,14 +118,14 @@
   box-shadow: 3px 3px 0px #000 !important;
 }
 
-/* Timeline Overview Paper - Thanh ngang ở trên */
+/* Timeline Overview Paper */
 .detail-page-wrapper .timeline-overview {
-  background: hwb(201 90% 0%) !important;
+  background: var(--bg-white) !important;
   border: var(--border-thick) !important;
   border-radius: 16px !important;
   box-shadow: var(--shadow-strong) !important;
   padding: 20px !important;
-  width: 100%; /* Bung full chiều ngang */
+  width: 100%;
   box-sizing: border-box;
 }
 
@@ -292,4 +292,43 @@
   height: 2px;
   background: linear-gradient(90deg, transparent, var(--text-dark), transparent);
   margin: 16px 0;
+}
+
+/* Responsive Styles */
+@media (max-width: 900px) {
+  .detail-page-wrapper .timeline-overview {
+    overflow-x: auto;
+  }
+
+  .detail-page-wrapper .card-image-overlay {
+    height: 180px;
+  }
+}
+
+@media (max-width: 600px) {
+  .detail-page-wrapper .header-section {
+    padding: 12px 16px !important;
+  }
+
+  .detail-page-wrapper .timeline-card {
+    border-radius: 12px !important;
+  }
+
+  .detail-page-wrapper .card-image-overlay {
+    height: 160px;
+  }
+
+  .detail-page-wrapper .overview-panel {
+    padding: 16px !important;
+  }
+
+  .detail-page-wrapper .timeline-location-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .detail-page-wrapper .transport-icon-circle {
+    width: 32px;
+    height: 32px;
+  }
 }
