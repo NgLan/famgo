@@ -1,7 +1,26 @@
 import { useState, useEffect, useRef } from 'react';
 import './schedule.create.css';
 import { toast } from 'react-toastify';
-import { Calendar, Image, Tag, Clock, MapPin, Trash2, GripVertical, Plus } from 'lucide-react';
+import {
+  Calendar,
+  Image as ImageIcon,
+  Tag as TagIcon,
+  Clock,
+  MapPin,
+  Trash2,
+  GripVertical,
+  Plus,
+  Search,
+  X,
+  ChevronUp,
+  ChevronDown,
+  MoreVertical,
+  Car,
+  Bike,
+  FootprintsIcon as Walk,
+  Bus,
+  Banknote
+} from 'lucide-react';
 
 const CLOUDINARY_UPLOAD_PRESET = 'itss1_upload'; // Thay bằng preset của bạn
 const CLOUDINARY_CLOUD_NAME = 'dxudvl25z'; // Thay bằng cloud name của bạn
@@ -260,6 +279,57 @@ const ScheduleCreate = () => {
         return;
       }
 
+      // Validate timeline items
+      for (let i = 0; i < formData.items.length; i++) {
+        const item = formData.items[i];
+
+        // Check if start time and end time are filled
+        if (!item.startTime || !item.endTime) {
+          toast.error(`項目 ${i + 1}: 開始時間と終了時間を入力してください`);
+          return;
+        }
+
+        // Check if end time is after start time
+        if (item.startTime >= item.endTime) {
+          toast.error(`項目 ${i + 1}: 終了時間は開始時間より後でなければなりません`);
+          return;
+        }
+
+        // Check if place is selected or custom name is provided
+        if (!item.placeId && !item.customPlaceName.trim()) {
+          toast.error(`項目 ${i + 1}: 場所を選択するか、カスタム名を入力してください`);
+          return;
+        }
+
+        // Check if next item's start time is after current item's end time
+        if (i < formData.items.length - 1) {
+          const nextItem = formData.items[i + 1];
+          if (nextItem.startTime && nextItem.startTime < item.endTime) {
+            toast.error(`項目 ${i + 2}: 開始時間は前の項目の終了時間（${item.endTime}）以降でなければなりません`);
+            return;
+          }
+        }
+      }
+
+      // Check if all items are within 24 hours (one day)
+      if (formData.items.length > 0) {
+        const firstStart = formData.items[0].startTime;
+        const lastEnd = formData.items[formData.items.length - 1].endTime;
+
+        if (firstStart && lastEnd) {
+          const [firstHour, firstMin] = firstStart.split(':').map(Number);
+          const [lastHour, lastMin] = lastEnd.split(':').map(Number);
+
+          const firstMinutes = firstHour * 60 + firstMin;
+          const lastMinutes = lastHour * 60 + lastMin;
+
+          if (lastMinutes < firstMinutes || lastMinutes - firstMinutes > 24 * 60) {
+            toast.error('一日プランは24時間以内でなければなりません');
+            return;
+          }
+        }
+      }
+
       setUploading(true);
 
       // Prepare data for API
@@ -369,6 +439,10 @@ const ScheduleCreate = () => {
           <div className="timeline-section">
             <div className="timeline-header">
               <label className="form-label">タイムライン</label>
+              <p className="timeline-note">
+                <Clock size={16} className="inline-icon" style={{ color: 'white' }} />
+                各項目の時間は、その場所での滞在時間です（移動時間は含まれません）
+              </p>
             </div>
 
             {formData.items.map((item, index) => (
@@ -384,7 +458,7 @@ const ScheduleCreate = () => {
                 <div className="timeline-item-header">
                   <div className="time-inputs">
                     <div className="time-input-group">
-                      <span className="time-icon">🕐</span>
+                      <Clock size={16} className="time-icon" />
                       <input
                         type="time"
                         className="time-input"
@@ -400,7 +474,7 @@ const ScheduleCreate = () => {
                     </div>
                     <span className="time-separator">-</span>
                     <div className="time-input-group">
-                      <span className="time-icon">🕐</span>
+                      <Clock size={16} className="time-icon" />
                       <input
                         type="time"
                         className="time-input"
@@ -419,10 +493,10 @@ const ScheduleCreate = () => {
                     <div className="menu-wrapper">
                       <button
                         className="btn-icon"
-                        title="Menu"
+                        title="メニュー"
                         onClick={() => setActiveMenu(activeMenu === item.id ? null : item.id)}
                       >
-                        ⋮
+                        <MoreVertical size={20} />
                       </button>
                       {activeMenu === item.id && (
                         <div className="dropdown-menu">
@@ -431,14 +505,14 @@ const ScheduleCreate = () => {
                             onClick={() => { moveTimelineItem(item.id, 'up'); setActiveMenu(null); }}
                             disabled={index === 0}
                           >
-                            ↑ 上に移動
+                            <ChevronUp size={16} /> 上に移動
                           </button>
                           <button
                             className="menu-item"
                             onClick={() => { moveTimelineItem(item.id, 'down'); setActiveMenu(null); }}
                             disabled={index === formData.items.length - 1}
                           >
-                            ↓ 下に移動
+                            <ChevronDown size={16} /> 下に移動
                           </button>
                         </div>
                       )}
@@ -448,12 +522,10 @@ const ScheduleCreate = () => {
                       onClick={() => removeTimelineItem(item.id)}
                       title="削除"
                     >
-                      🗑️
+                      <Trash2 size={20} />
                     </button>
                   </div>
-                </div>
-
-                <div className="timeline-item-content">
+                </div>                <div className="timeline-item-content">
                   {/* Place Link and Name Inputs */}
                   <div className="place-info-inputs">
                     <input
@@ -484,7 +556,7 @@ const ScheduleCreate = () => {
                               updateTimelineItem(item.id, 'placeSearchKeyword', '');
                             }}
                           >
-                            ×
+                            <X size={14} />
                           </button>
                         </span>
                       )}
@@ -529,7 +601,7 @@ const ScheduleCreate = () => {
                         <img src={item.image} alt="Preview" className="preview-image" />
                       ) : (
                         <div className="image-placeholder">
-                          <span className="placeholder-icon">📷</span>
+                          <ImageIcon size={40} className="placeholder-icon" />
                         </div>
                       )}
                       <input
@@ -540,6 +612,7 @@ const ScheduleCreate = () => {
                         id={`file-${item.id}`}
                       />
                       <label htmlFor={`file-${item.id}`} className="file-label">
+                        <ImageIcon size={16} className="inline-icon-btn" />
                         画像を選択
                       </label>
                     </div>
@@ -558,22 +631,34 @@ const ScheduleCreate = () => {
                   <div className="timeline-item-footer">
                     {/* Transport */}
                     <div className="footer-item">
-                      <label className="footer-label">🚗 移動手段</label>
-                      <select
-                        className="footer-select"
-                        value={item.transport}
-                        onChange={(e) => updateTimelineItem(item.id, 'transport', e.target.value)}
-                      >
-                        <option value="車">🚗 車</option>
-                        <option value="バイク">🏍️ バイク</option>
-                        <option value="徒歩">🚶 徒歩</option>
-                        <option value="バス">🚌 バス</option>
-                      </select>
+                      <label className="footer-label">
+                        <Car size={16} className="inline-icon" style={{ color: '#5BC0EB' }} />
+                        移動手段
+                      </label>
+                      <div className="select-with-icon">
+                        {item.transport === '車' && <Car size={18} className="select-icon" style={{ color: '#5BC0EB' }} />}
+                        {item.transport === 'バイク' && <Bike size={18} className="select-icon" style={{ color: '#FF90E8' }} />}
+                        {item.transport === '徒歩' && <Walk size={18} className="select-icon" style={{ color: '#FDE24F' }} />}
+                        {item.transport === 'バス' && <Bus size={18} className="select-icon" style={{ color: '#9B59B6' }} />}
+                        <select
+                          className="footer-select with-icon-select"
+                          value={item.transport}
+                          onChange={(e) => updateTimelineItem(item.id, 'transport', e.target.value)}
+                        >
+                          <option value="車">🚗 車（自動車）</option>
+                          <option value="バイク">🏍️ バイク</option>
+                          <option value="徒歩">🚶 徒歩</option>
+                          <option value="バス">🚌 バス</option>
+                        </select>
+                      </div>
                     </div>
 
                     {/* Price Range */}
                     <div className="footer-item footer-item-price">
-                      <label className="footer-label">💴 金額</label>
+                      <label className="footer-label">
+                        <Banknote size={16} className="inline-icon" style={{ color: '#27ae60' }} />
+                        金額
+                      </label>
                       <div className="price-range-inputs">
                         <input
                           type="number"
@@ -611,7 +696,8 @@ const ScheduleCreate = () => {
 
             {/* Add Timeline Button */}
             <button className="btn-add-timeline" onClick={addTimelineItem}>
-              ➕ タイムライン項目を追加
+              <Plus size={20} className="inline-icon-btn" />
+              タイムライン項目を追加
             </button>
           </div>
         </div>
@@ -638,7 +724,10 @@ const ScheduleCreate = () => {
 
           {/* Date Picker */}
           <div className="form-group">
-            <label className="form-label">📅 実施日</label>
+            <label className="form-label">
+              <Calendar size={16} className="inline-icon" style={{ color: '#FF90E8' }} />
+              実施日
+            </label>
             <input
               type="date"
               className="form-input"
@@ -660,12 +749,16 @@ const ScheduleCreate = () => {
 
           {/* Cover Image */}
           <div className="form-group">
-            <label className="form-label">📸 カバー画像</label>
+            <label className="form-label">
+              <ImageIcon size={16} className="inline-icon" style={{ color: '#5BC0EB' }} />
+              カバー画像
+            </label>
             <div className="cover-image-upload">
               {formData.coverImage ? (
                 <img src={formData.coverImage} alt="Cover" className="cover-preview" />
               ) : (
                 <div className="cover-placeholder">
+                  <ImageIcon size={48} className="placeholder-icon" />
                   <span className="placeholder-text">画像をアップロード</span>
                 </div>
               )}
@@ -677,6 +770,7 @@ const ScheduleCreate = () => {
                 id="cover-file"
               />
               <label htmlFor="cover-file" className="file-label-cover">
+                <ImageIcon size={16} className="inline-icon-btn" />
                 画像を選択
               </label>
             </div>
@@ -684,7 +778,10 @@ const ScheduleCreate = () => {
 
           {/* Tags */}
           <div className="form-group">
-            <label className="form-label">🏷️ タグ</label>
+            <label className="form-label">
+              <TagIcon size={16} className="inline-icon" style={{ color: '#FDE24F' }} />
+              タグ
+            </label>
             <div className="tags-input-wrapper">
               <input
                 type="text"
@@ -695,15 +792,17 @@ const ScheduleCreate = () => {
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               />
               <button className="btn-add-tag" onClick={addTag}>
+                <Plus size={16} className="inline-icon-btn" />
                 追加
               </button>
             </div>
             <div className="tags-list">
               {formData.tags.map((tag, index) => (
                 <span key={index} className="tag">
+                  <TagIcon size={12} className="inline-icon" style={{ color: 'white' }} />
                   {tag}
                   <button className="tag-remove" onClick={() => removeTag(tag)}>
-                    ×
+                    <X size={12} />
                   </button>
                 </span>
               ))}
