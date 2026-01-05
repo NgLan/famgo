@@ -1,5 +1,17 @@
 import { useEffect, useState } from "react";
-import { Heart, MapPin, Plus, Search, Filter, ChevronDown, ChevronLeft, ChevronRight, Users } from "lucide-react";
+import {
+  Heart,
+  MapPin,
+  Plus,
+  Search,
+  Filter,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Users,
+  StickyNote,
+  Banknote,
+} from "lucide-react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 
@@ -37,12 +49,19 @@ export default function Schedule() {
         if (appliedFilters.search) params.search = appliedFilters.search;
         if (appliedFilters.province) params.province = appliedFilters.province;
         if (appliedFilters.area) params.area = appliedFilters.area;
-        if (appliedFilters.price_min !== null) params.price_min = appliedFilters.price_min;
-        if (appliedFilters.price_max !== null) params.price_max = appliedFilters.price_max;
-        if (appliedFilters.age_min !== null) params.age_min = appliedFilters.age_min;
-        if (appliedFilters.age_max !== null) params.age_max = appliedFilters.age_max;
+        if (appliedFilters.price_min !== null)
+          params.price_min = appliedFilters.price_min;
+        if (appliedFilters.price_max !== null)
+          params.price_max = appliedFilters.price_max;
+        if (appliedFilters.age_min !== null)
+          params.age_min = appliedFilters.age_min;
+        if (appliedFilters.age_max !== null)
+          params.age_max = appliedFilters.age_max;
 
-        const response = await axios.get("http://localhost:3000/api/day-plans", { params });
+        const response = await axios.get(
+          "http://localhost:3000/api/day-plans",
+          { params }
+        );
         setPlansData(response.data?.data ?? []);
         setTotalPages(response.data?.pagination?.totalPages ?? 1);
       } catch (error) {
@@ -57,7 +76,7 @@ export default function Schedule() {
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleApplyFilters = () => {
@@ -65,23 +84,52 @@ export default function Schedule() {
     let price_max = null;
 
     switch (priceRange) {
-      case "free": price_min = 0; price_max = 0; break;
-      case "0-150k": price_min = 0; price_max = 15000; break;
-      case "150k-600k": price_min = 150000; price_max = 600000; break;
-      case "250k-1m": price_min = 250000; price_max = 1000000; break;
-      case "1m+": price_min = 1000000; price_max = null; break;
-      default: break;
+      case "free":
+        price_min = 0;
+        price_max = 0;
+        break;
+      case "0-150k":
+        price_min = 0;
+        price_max = 15000;
+        break;
+      case "150k-600k":
+        price_min = 150000;
+        price_max = 600000;
+        break;
+      case "250k-1m":
+        price_min = 250000;
+        price_max = 1000000;
+        break;
+      case "1m+":
+        price_min = 1000000;
+        price_max = null;
+        break;
+      default:
+        break;
     }
 
     let age_min = null;
     let age_max = null;
 
     switch (ageRange) {
-      case "0-5": age_min = 0; age_max = 5; break;
-      case "5-12": age_min = 5; age_max = 12; break;
-      case "12-18": age_min = 12; age_max = 18; break;
-      case "18+": age_min = 18; age_max = null; break;
-      default: break;
+      case "0-5":
+        age_min = 0;
+        age_max = 5;
+        break;
+      case "5-12":
+        age_min = 5;
+        age_max = 12;
+        break;
+      case "12-18":
+        age_min = 12;
+        age_max = 18;
+        break;
+      case "18+":
+        age_min = 18;
+        age_max = null;
+        break;
+      default:
+        break;
     }
 
     setAppliedFilters({
@@ -126,7 +174,9 @@ export default function Schedule() {
         <div className="w-5 h-5 border-2 border-black rounded-full peer-checked:bg-[#5BC0EB] peer-checked:border-[#5BC0EB] transition-all"></div>
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-white rounded-full opacity-0 peer-checked:opacity-100"></div>
       </div>
-      <span className="font-bold text-sm group-hover:text-[#5BC0EB] transition-colors">{label}</span>
+      <span className="font-bold text-sm group-hover:text-[#5BC0EB] transition-colors">
+        {label}
+      </span>
     </label>
   );
 
@@ -137,17 +187,16 @@ export default function Schedule() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-3xl md:text-4xl font-black inline-block relative">
-              <span className="relative z-10">📅 おすすめスケジュール</span>
-              <span className="absolute bottom-0 left-0 w-full h-3 bg-[#5BC0EB] -z-0 -rotate-1"></span>
+              <span className="relative z-10">おすすめ一日プラン</span>
+              <span className="absolute bottom-0 left-0 w-full h-3 -z-0 -rotate-1"></span>
             </h1>
-            <p className="text-gray-600 mt-2 font-medium">みんなのお出かけプランをチェック</p>
           </div>
           <Link
             to="/schedule/create"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF90E8] border-2 border-black rounded-xl font-bold shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 border-2 border-black rounded-xl font-bold shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] active:shadow-[2px_2px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all"
           >
             <Plus size={20} />
-            新しいスケジュールを作成
+            1日プラン作成
           </Link>
         </div>
 
@@ -164,8 +213,12 @@ export default function Schedule() {
             ) : plansData.length === 0 ? (
               <div className="bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0_0_#000] p-12 text-center">
                 <div className="text-6xl mb-4">📋</div>
-                <h3 className="text-xl font-bold mb-2">スケジュールがありません</h3>
-                <p className="text-gray-500">最初のスケジュールを作成してみましょう！</p>
+                <h3 className="text-xl font-bold mb-2">
+                  スケジュールがありません
+                </h3>
+                <p className="text-gray-500">
+                  最初のスケジュールを作成してみましょう！
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -178,22 +231,33 @@ export default function Schedule() {
                     <div className="p-4 border-b-2 border-dashed border-gray-200 flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <img
-                          src={plan.user.avatar || "https://via.placeholder.com/40"}
+                          src={
+                            plan.user.avatar || "https://via.placeholder.com/40"
+                          }
                           alt={plan.user.fullName}
                           className="w-10 h-10 rounded-full border-2 border-black object-cover"
                         />
-                        <span className="font-bold text-sm">{plan.user.fullName}</span>
+                        <span className="font-bold text-sm">
+                          {plan.user.fullName}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 bg-[#FFE4EC] px-2 py-1 rounded-full border border-[#FF90E8]">
-                        <Heart size={14} className="text-[#FF90E8] fill-[#FF90E8]" />
-                        <span className="text-sm font-bold text-[#FF90E8]">{plan.likes}</span>
+                        <Heart
+                          size={14}
+                          className="text-[#FF90E8] fill-[#FF90E8]"
+                        />
+                        <span className="text-sm font-bold text-[#FF90E8]">
+                          {plan.likes}
+                        </span>
                       </div>
                     </div>
 
                     {/* Cover Image */}
                     <div className="relative h-44">
                       <img
-                        src={plan.cover || "https://via.placeholder.com/400x200"}
+                        src={
+                          plan.cover || "https://via.placeholder.com/400x200"
+                        }
                         alt={plan.title}
                         className="w-full h-full object-cover"
                       />
@@ -201,37 +265,47 @@ export default function Schedule() {
 
                     {/* Content */}
                     <div className="p-4 flex-1 flex flex-col">
-                      <h3 className="font-black text-lg mb-2 line-clamp-1">{plan.title}</h3>
-                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">{plan.description}</p>
+                      <h3 className="font-black text-lg mb-2 line-clamp-1">
+                        {plan.title}
+                      </h3>
+                      <p className="text-gray-600 text-sm line-clamp-2 mb-3">
+                        {plan.description}
+                      </p>
 
                       {/* Info Tags */}
                       <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
+                        {/* <div className="flex items-center gap-1 text-sm text-gray-500">
                           <MapPin size={14} className="text-[#5BC0EB]" />
                           <span>{plan.province?.[0] || '未設定'} · {plan.area?.[0] || '未設定'}</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="inline-flex items-center px-2 py-1 bg-[#E8F5E9] border border-[#4CAF50] rounded-full text-xs font-bold">
-                            💰 {plan.price_range || '料金未設定'}
+                        </div> */}
+                        <div className="flex flex-col gap-2">
+                          <span className="badge badge-green w-fit">
+                            <Banknote size={12} />
+                            {plan.price_range || "料金未設定"}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-[#FFF3E0] border border-[#FF9800] rounded-full text-xs font-bold">
+
+                          <span className="badge badge-orange w-fit">
                             <Users size={12} />
-                            {plan.age || '全年齢'}
+                            {plan.age || "全年齢"}
                           </span>
+
+                          {plan.note && (
+                            <span className="badge badge-orange w-fit">
+                              <StickyNote size={12} />
+                              {plan.note}
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       {/* Action */}
-                      <div className="mt-auto pt-3 border-t-2 border-dashed border-gray-200 flex items-center justify-between">
+                      <div className="mt-auto pt-3 border-t-2 border-dashed border-gray-200 flex items-center justify-center">
                         <button
                           onClick={() => navigate(`/schedule/${plan.id}`)}
                           className="px-4 py-2 bg-[#5BC0EB] border-2 border-black rounded-lg font-bold text-sm shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
                         >
                           詳細を見る
                         </button>
-                        <span className="text-xs font-medium text-gray-400">
-                          #{plan?.area?.[0]?.replace(/\s+/g, "") || ""}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -250,20 +324,26 @@ export default function Schedule() {
                   <ChevronLeft size={20} />
                 </button>
 
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
-                  <button
-                    key={pageNum}
-                    onClick={() => handlePageChange(pageNum)}
-                    className={`w-10 h-10 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all ${
-                      page === pageNum ? 'bg-[#5BC0EB] text-white' : 'bg-white text-black'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => handlePageChange(pageNum)}
+                      className={`w-10 h-10 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all ${
+                        page === pageNum
+                          ? "bg-[#5BC0EB] text-white"
+                          : "bg-white text-black"
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                )}
 
                 <button
-                  onClick={() => handlePageChange(Math.min(totalPages, page + 1))}
+                  onClick={() =>
+                    handlePageChange(Math.min(totalPages, page + 1))
+                  }
                   disabled={page === totalPages}
                   className="w-10 h-10 bg-white border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
                 >
@@ -275,16 +355,11 @@ export default function Schedule() {
 
           {/* Filter Sidebar */}
           <div className="lg:col-span-4 xl:col-span-3 order-1 lg:order-2">
-            <div className="bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0_0_#000] sticky top-6">
+            <div className="">
+            <div className="bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0_0_#000]">
               {/* Search Header */}
-              <div className="p-4 border-b-2 border-black">
-                <h2 className="text-xl font-black flex items-center gap-2">
-                  <span className="bg-[#5BC0EB] w-2 h-6 rounded-full"></span>
-                  検索・フィルター
-                </h2>
-              </div>
 
-              <div className="p-4 space-y-4">
+              <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
                 {/* Search Input */}
                 <div className="relative">
                   <input
@@ -292,7 +367,9 @@ export default function Schedule() {
                     placeholder="場所名を入力..."
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleApplyFilters()}
+                    onKeyPress={(e) =>
+                      e.key === "Enter" && handleApplyFilters()
+                    }
                     className="w-full px-4 py-3 pr-12 border-2 border-black rounded-xl font-medium shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[3px_3px_0_0_#000] transition-all"
                   />
                   <button
@@ -303,11 +380,11 @@ export default function Schedule() {
                   </button>
                 </div>
 
-                <div className="border-t-2 border-dashed border-gray-300 my-4"></div>
+                <div className="border-t border-dashed border-gray-300 my-2"></div>
 
                 {/* Province/Area */}
                 <div>
-                  <h3 className="font-black mb-2 text-sm">📍 住所で絞り込む</h3>
+                  <h3 className="font-black mb-2 text-sm">フィルター</h3>
                   <div className="space-y-2">
                     <div className="relative">
                       <select
@@ -315,12 +392,15 @@ export default function Schedule() {
                         onChange={(e) => setSelectedProvince(e.target.value)}
                         className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
                       >
-                        <option value="">都道府県（すべて）</option>
-                        <option value="Hà Nội">ハノイ</option>
-                        <option value="Tp. HCM">ホーチミン</option>
-                        <option value="Đà Nẵng">ダナン</option>
+                        <option value="">都道府県</option>
+                        <option value="東京都">ハノイ</option>
+                        <option value="大阪府">ホーチミン</option>
+                        <option value="神奈川県">ダナン</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" size={16} />
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                        size={16}
+                      />
                     </div>
                     <div className="relative">
                       <select
@@ -328,42 +408,100 @@ export default function Schedule() {
                         onChange={(e) => setSelectedArea(e.target.value)}
                         className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
                       >
-                        <option value="">区・郡（すべて）</option>
-                        <option value="Hoàn Kiếm">ホアンキエム</option>
-                        <option value="Hai Bà Trưng">ハイバーチュン</option>
-                        <option value="Tây Hồ">タイホー</option>
+                        <option value="">区・郡</option>
+                        <option value="渋谷区">ホアンキエム</option>
+                        <option value="中央区">ハイバーチュン</option>
+                        <option value="横浜市">タイホー</option>
                       </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" size={16} />
+                      <ChevronDown
+                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                        size={16}
+                      />
                     </div>
                   </div>
                 </div>
 
-                <div className="border-t-2 border-dashed border-gray-300 my-4"></div>
+                <div className="border-t border-dashed border-gray-300 my-2"></div>
 
                 {/* Price Range */}
                 <div>
                   <h3 className="font-black mb-2 text-sm">💰 料金範囲</h3>
                   <div className="space-y-1">
-                    <RadioOption value="all" currentValue={priceRange} onChange={setPriceRange} label="すべて" />
-                    <RadioOption value="free" currentValue={priceRange} onChange={setPriceRange} label="無料" />
-                    <RadioOption value="0-150k" currentValue={priceRange} onChange={setPriceRange} label="0円 - 1,000円" />
-                    <RadioOption value="150k-600k" currentValue={priceRange} onChange={setPriceRange} label="1,000円 - 4,000円" />
-                    <RadioOption value="250k-1m" currentValue={priceRange} onChange={setPriceRange} label="1,500円 - 6,000円" />
-                    <RadioOption value="1m+" currentValue={priceRange} onChange={setPriceRange} label="6,000円以上" />
+                    <RadioOption
+                      value="all"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="すべて"
+                    />
+                    <RadioOption
+                      value="free"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="無料"
+                    />
+                    <RadioOption
+                      value="0-150k"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="0円 - 1,000円"
+                    />
+                    <RadioOption
+                      value="150k-600k"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="1,000円 - 4,000円"
+                    />
+                    <RadioOption
+                      value="250k-1m"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="1,500円 - 6,000円"
+                    />
+                    <RadioOption
+                      value="1m+"
+                      currentValue={priceRange}
+                      onChange={setPriceRange}
+                      label="6,000円以上"
+                    />
                   </div>
                 </div>
 
-                <div className="border-t-2 border-dashed border-gray-300 my-4"></div>
+                <div className="border-t border-dashed border-gray-300 my-2"></div>
 
                 {/* Age Range */}
                 <div>
                   <h3 className="font-black mb-2 text-sm">👨‍👩‍👧‍👦 対象年齢</h3>
                   <div className="space-y-1">
-                    <RadioOption value="all" currentValue={ageRange} onChange={setAgeRange} label="すべて" />
-                    <RadioOption value="0-5" currentValue={ageRange} onChange={setAgeRange} label="0 - 5歳" />
-                    <RadioOption value="5-12" currentValue={ageRange} onChange={setAgeRange} label="5 - 12歳" />
-                    <RadioOption value="12-18" currentValue={ageRange} onChange={setAgeRange} label="12 - 18歳" />
-                    <RadioOption value="18+" currentValue={ageRange} onChange={setAgeRange} label="18歳以上" />
+                    <RadioOption
+                      value="all"
+                      currentValue={ageRange}
+                      onChange={setAgeRange}
+                      label="すべて"
+                    />
+                    <RadioOption
+                      value="0-5"
+                      currentValue={ageRange}
+                      onChange={setAgeRange}
+                      label="0 - 5歳"
+                    />
+                    <RadioOption
+                      value="5-12"
+                      currentValue={ageRange}
+                      onChange={setAgeRange}
+                      label="5 - 12歳"
+                    />
+                    <RadioOption
+                      value="12-18"
+                      currentValue={ageRange}
+                      onChange={setAgeRange}
+                      label="12 - 18歳"
+                    />
+                    <RadioOption
+                      value="18+"
+                      currentValue={ageRange}
+                      onChange={setAgeRange}
+                      label="18歳以上"
+                    />
                   </div>
                 </div>
               </div>
@@ -384,6 +522,7 @@ export default function Schedule() {
                   リセット
                 </button>
               </div>
+            </div>
             </div>
           </div>
         </div>
