@@ -485,16 +485,10 @@ export default function Schedule() {
                       label="0 - 5歳"
                     />
                     <RadioOption
-                      value="5-12"
+                      value="6-12"
                       currentValue={ageRange}
                       onChange={setAgeRange}
-                      label="5 - 12歳"
-                    />
-                    <RadioOption
-                      value="12-18"
-                      currentValue={ageRange}
-                      onChange={setAgeRange}
-                      label="12 - 18歳"
+                      label="6 - 12歳"
                     />
                   </div>
                 </div>
