@@ -382,15 +382,14 @@ const formatPrice = (priceRange) => {
 };
 
 // GET /api/day-plans/:id - Lấy chi tiết day plan
-// GET /api/day-plans/:id - Lấy chi tiết day plan
 module.exports.detail = async (req, res) => {
   try {
     const { id } = req.params;
 
-    // SỬA: Thêm .populate() để lấy thông tin user và place chi tiết
+    // 1. Lấy chi tiết plan và populate đầy đủ thông tin
     const dayPlan = await DayPlan.findById(id)
-      .populate("user_id", "fullName avatar") // <--- Quan trọng: Lấy tên và avatar user
-      .populate("items.place_id", "name images address") // <--- Lấy thêm thông tin địa điểm cho chắc
+      .populate("user_id", "fullName avatar") // Lấy tên và avatar người tạo
+      .populate("items.place_id", "name images address location") // Lấy thông tin địa điểm
       .lean();
 
     if (!dayPlan) {
@@ -400,10 +399,11 @@ module.exports.detail = async (req, res) => {
       });
     }
 
-    const totalLikes = await Like.countDocuments({ day_plan_id: dayPlan._id });
-    
-    // 3. Gắn số like vào kết quả trả về
-    dayPlan.likes = totalLikes;
+    // 2. Đếm tổng số like thực tế từ bảng Like
+    const totalLikes = await Like.countDocuments({ day_plan_id: id });
+
+    // 3. Gắn số like vào object trả về (thống nhất key là total_likes)
+    dayPlan.total_likes = totalLikes;
 
     return res.status(200).json({
       success: true,
@@ -677,3 +677,4 @@ module.exports.checkLikeDayPlan = async (req, res) => {
     });
   }
 };
+

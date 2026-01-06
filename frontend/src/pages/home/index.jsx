@@ -55,7 +55,7 @@ const DISTRICTS = [
     color: THEME_COLORS.pink
   },
   {
-    name: 'ドンダー', sub: 'Hai Bà Trưng', value: 'Hai Bà Trưng',
+    name: 'ハイバチュン地', sub: 'Hai Bà Trưng', value: 'Hai Bà Trưng',
     // Ảnh Văn Miếu
     image: 'https://eholiday.vn/wp-content/uploads/2024/07/vinke-va-vinpearl-aquarium-7-1.jpg',
     color: THEME_COLORS.blue

@@ -13,7 +13,10 @@ import {
   Banknote,
 } from "lucide-react";
 import axios from "axios";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL; 
 
 export default function Schedule() {
   const [plansData, setPlansData] = useState([]);
@@ -58,10 +61,9 @@ export default function Schedule() {
         if (appliedFilters.age_max !== null)
           params.age_max = appliedFilters.age_max;
 
-        const response = await axios.get(
-          "http://localhost:3000/api/day-plans",
-          { params }
-        );
+        const response = await axios.get(`${API_URL}/api/day-plans`, {
+          params
+        });
         setPlansData(response.data?.data ?? []);
         setTotalPages(response.data?.pagination?.totalPages ?? 1);
       } catch (error) {

@@ -4,6 +4,8 @@ import { MoreVertical, Send, User, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 import { getCookie } from '../../helpers/cookies.helper';
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const COLORS = {
     pink: '#FF90E8',
     blue: '#5BC0EB',
@@ -52,7 +54,7 @@ const CommentSection = ({ placeId, placeName }) => {
             setLoading(true);
             setError(null);
             const response = await axios.get(
-                `http://localhost:3000/api/comments/${placeId}?page=${pageNum}&limit=${LIMIT}`,
+                `${API_URL}/api/comments/${placeId}?page=${pageNum}&limit=${LIMIT}`,
                 {
                     withCredentials: true
                 }
@@ -95,7 +97,7 @@ const CommentSection = ({ placeId, placeName }) => {
             setSubmitting(true);
 
             const response = await axios.post(
-                'http://localhost:3000/api/comments',
+                `${API_URL}/api/comments`,
                 {
                     place_id: placeId,
                     content: newComment.trim()
@@ -160,7 +162,7 @@ const CommentSection = ({ placeId, placeName }) => {
             setSubmitting(true);
 
             const response = await axios.put(
-                `http://localhost:3000/api/comments/${editingId}`,
+                `${API_URL}/api/comments/${editingId}`,
                 { content: editContent.trim() },
                 {
                     withCredentials: true
@@ -218,7 +220,7 @@ const CommentSection = ({ placeId, placeName }) => {
             setSubmitting(true);
 
             const response = await axios.delete(
-                `http://localhost:3000/api/comments/${deleteCommentId}`,
+                `${API_URL}/api/comments/${deleteCommentId}`,
                 {
                     withCredentials: true
                 }

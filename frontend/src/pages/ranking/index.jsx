@@ -16,6 +16,8 @@ import {
   removeFavoritePlace,
 } from "../../services/favorite.services";
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const RankingPage = () => {
   const navigate = useNavigate();
   const [places, setPlaces] = useState([]);
@@ -55,7 +57,7 @@ const RankingPage = () => {
         params.append("sort_by", "rating");
 
         const response = await axios.get(
-          `http://localhost:3000/api/places/search?${params.toString()}`
+          `${API_URL}/api/places/search?${params.toString()}`
         );
 
         setPlaces(response.data.data);

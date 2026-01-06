@@ -4,6 +4,8 @@ import { Star, X } from 'lucide-react';
 import axios from 'axios';
 import { getCookie } from '../../helpers/cookies.helper';
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const COLORS = {
     bg: '#FFFBF5',
     pink: '#FF90E8',
@@ -54,7 +56,7 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
     const loadMyReview = async () => {
         try {
             const response = await axios.get(
-                `http://localhost:3000/api/reviews/my-review/${placeId}`,
+                `${API_URL}/api/reviews/my-review/${placeId}`,
                 { withCredentials: true }
             );
 
@@ -115,14 +117,14 @@ const ReviewDialog = ({ open, onClose, placeId, onReviewSuccess }) => {
             if (existingReview?._id) {
                 // Update existing review
                 response = await axios.put(
-                    `http://localhost:3000/api/reviews/${existingReview._id}`,
+                    `${API_URL}/api/reviews/${existingReview._id}`,
                     payload,
                     { withCredentials: true }
                 );
             } else {
                 // Create new review
                 response = await axios.post(
-                    'http://localhost:3000/api/reviews',
+                    `${API_URL}/api/reviews`,
                     payload,
                     { withCredentials: true }
                 );
