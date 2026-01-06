@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+app.enable('trust proxy');
 const database = require("./config/database.js");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -25,10 +26,8 @@ app.use(
 
 // Middlewares: parse JSON and x-www-form-urlencoded BEFORE mounting routes
 app.use(express.json());
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(cors(cors));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");

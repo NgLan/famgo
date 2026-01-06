@@ -83,6 +83,15 @@ module.exports.login = async (req, res) => {
     user.tokenUser = token
     await user.save()
 
+    const cookieOptions = {
+      httpOnly: true, // Bảo mật: JS phía client không đọc được
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // Hết hạn sau 1 ngày
+      secure: true,   // BẮT BUỘC để chạy trên Render (HTTPS)
+      sameSite: 'none' // BẮT BUỘC để Vercel gọi được Render
+    };
+
+    res.cookie("token", token, cookieOptions); 
+
     return res.status(200).json({
       message: 'Đăng nhập thành công',
       token,
