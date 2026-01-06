@@ -276,15 +276,14 @@ const RankingPage = () => {
                                     e.stopPropagation();
                                     toggleFavorite(place._id);
                                   }}
-                                  className={`w-10 h-10 rounded-full border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center transition-all hover:scale-110 ${
-                                    isFavorite ? "bg-[#FF90E8]" : "bg-white"
-                                  }`}
+                                  className={`w-10 h-10 rounded-full border-2 border-black shadow-[2px_2px_0_0_#000] flex items-center justify-center transition-all hover:scale-110 bg-white
+                                  `}
                                 >
                                   <Heart
                                     size={20}
                                     className={
                                       isFavorite
-                                        ? "fill-white text-white"
+                                        ? "fill-[#da4458] text-black"
                                         : "text-black"
                                     }
                                   />

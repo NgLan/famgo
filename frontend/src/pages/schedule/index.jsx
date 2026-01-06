@@ -12,17 +12,26 @@ import {
   StickyNote,
   Banknote,
 } from "lucide-react";
+import FavoriteIcon from "@mui/icons-material/Favorite";
+import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+import { getCookie } from "../../helpers/cookies.helper";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
+import {
+  likeDayPlan,
+  unlikeDayPlan,
+  checkLikeDayPlan,
+} from "../../services/favorite.services";
 
-const API_URL = import.meta.env.VITE_API_URL; 
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function Schedule() {
   const [plansData, setPlansData] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [likedPlans, setLikedPlans] = useState({});
   const navigate = useNavigate();
 
   // Filter states
@@ -47,27 +56,35 @@ export default function Schedule() {
     const fetchDayPlans = async () => {
       try {
         setLoading(true);
-        const params = { page };
-
-        if (appliedFilters.search) params.search = appliedFilters.search;
-        if (appliedFilters.province) params.province = appliedFilters.province;
-        if (appliedFilters.area) params.area = appliedFilters.area;
-        if (appliedFilters.price_min !== null)
-          params.price_min = appliedFilters.price_min;
-        if (appliedFilters.price_max !== null)
-          params.price_max = appliedFilters.price_max;
-        if (appliedFilters.age_min !== null)
-          params.age_min = appliedFilters.age_min;
-        if (appliedFilters.age_max !== null)
-          params.age_max = appliedFilters.age_max;
-
         const response = await axios.get(`${API_URL}/api/day-plans`, {
-          params
+          params: { page },
         });
-        setPlansData(response.data?.data ?? []);
+
+        const plans = response.data?.data ?? [];
+        setPlansData(plans);
         setTotalPages(response.data?.pagination?.totalPages ?? 1);
-      } catch (error) {
-        console.error("Failed to fetch day plans", error?.response ?? error);
+
+        // check liked for each plan
+        const userStr = getCookie("user");
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          const likedMap = {};
+
+          await Promise.all(
+            plans.map(async (plan) => {
+              try {
+                const chk = await checkLikeDayPlan(user._id, plan.id);
+                likedMap[plan.id] = !!chk?.data?.is_liked;
+              } catch {
+                likedMap[plan.id] = false;
+              }
+            })
+          );
+
+          setLikedPlans(likedMap);
+        }
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -79,6 +96,40 @@ export default function Schedule() {
   const handlePageChange = (newPage) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleToggleLike = async (planId) => {
+    const userStr = getCookie("user");
+    if (!userStr) {
+      navigate("/login");
+      return;
+    }
+
+    const user = JSON.parse(userStr);
+    const isLiked = likedPlans[planId];
+
+    try {
+      if (isLiked) {
+        await unlikeDayPlan(user._id, planId);
+      } else {
+        await likeDayPlan(user._id, planId);
+      }
+
+      setLikedPlans((prev) => ({
+        ...prev,
+        [planId]: !isLiked,
+      }));
+
+      setPlansData((prev) =>
+        prev.map((p) =>
+          p.id === planId
+            ? { ...p, likes: isLiked ? p.likes - 1 : p.likes + 1 }
+            : p
+        )
+      );
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleApplyFilters = () => {
@@ -118,19 +169,9 @@ export default function Schedule() {
         age_min = 0;
         age_max = 5;
         break;
-      case "5-12":
-        age_min = 5;
+      case "6-12":
+        age_min = 6;
         age_max = 12;
-        break;
-      case "12-18":
-        age_min = 12;
-        age_max = 18;
-        break;
-      case "18+":
-        age_min = 18;
-        age_max = null;
-        break;
-      default:
         break;
     }
 
@@ -243,14 +284,20 @@ export default function Schedule() {
                           {plan.user.fullName}
                         </span>
                       </div>
-                      <div className="flex items-center gap-1 bg-[#FFE4EC] px-2 py-1 rounded-full border border-[#FF90E8]">
-                        <Heart
-                          size={14}
-                          className="text-[#FF90E8] fill-[#FF90E8]"
-                        />
-                        <span className="text-sm font-bold text-[#FF90E8]">
-                          {plan.likes}
-                        </span>
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => handleToggleLike(plan.id)}
+                          className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-black rounded-full"
+                        >
+                          {likedPlans[plan.id] ? (
+                            <FavoriteIcon sx={{ color: "#f44336" }} />
+                          ) : (
+                            <FavoriteBorderIcon />
+                          )}
+                          <span className="font-black text-lg">
+                            {plan.likes}
+                          </span>
+                        </button>
                       </div>
                     </div>
 
@@ -357,162 +404,162 @@ export default function Schedule() {
 
           {/* Filter Sidebar */}
           <div className="lg:col-span-4 xl:col-span-3 order-1 lg:order-2">
-            <div className="">
-            <div className="bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0_0_#000]">
-              {/* Search Header */}
+            <div className="sticky top-20">
+              <div className="bg-white border-2 border-black rounded-2xl shadow-[4px_4px_0_0_#000]">
+                {/* Search Header */}
 
-              <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
-                {/* Search Input */}
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="場所名を入力..."
-                    value={searchText}
-                    onChange={(e) => setSearchText(e.target.value)}
-                    onKeyPress={(e) =>
-                      e.key === "Enter" && handleApplyFilters()
-                    }
-                    className="w-full px-4 py-3 pr-12 border-2 border-black rounded-xl font-medium shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[3px_3px_0_0_#000] transition-all"
-                  />
+                <div className="p-3 space-y-3 max-h-[70vh] overflow-y-auto">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="場所名を入力..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      onKeyPress={(e) =>
+                        e.key === "Enter" && handleApplyFilters()
+                      }
+                      className="w-full px-4 py-3 pr-12 border-2 border-black rounded-xl font-medium shadow-[2px_2px_0_0_#000] focus:outline-none focus:shadow-[3px_3px_0_0_#000] transition-all"
+                    />
+                    <button
+                      onClick={handleApplyFilters}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      <Search size={20} />
+                    </button>
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-300 my-2"></div>
+
+                  {/* Province/Area */}
+                  <div>
+                    <h3 className="font-black mb-2 text-sm">フィルター</h3>
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <select
+                          value={selectedProvince}
+                          onChange={(e) => setSelectedProvince(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
+                        >
+                          <option value="">都道府県</option>
+                          <option value="東京都">ハノイ</option>
+                          <option value="大阪府">ホーチミン</option>
+                          <option value="神奈川県">ダナン</option>
+                        </select>
+                        <ChevronDown
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                          size={16}
+                        />
+                      </div>
+                      <div className="relative">
+                        <select
+                          value={selectedArea}
+                          onChange={(e) => setSelectedArea(e.target.value)}
+                          className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
+                        >
+                          <option value="">区・郡</option>
+                          <option value="渋谷区">ホアンキエム</option>
+                          <option value="中央区">ハイバーチュン</option>
+                          <option value="横浜市">タイホー</option>
+                        </select>
+                        <ChevronDown
+                          className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                          size={16}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-300 my-2"></div>
+
+                  {/* Price Range */}
+                  <div>
+                    <h3 className="font-black mb-2 text-sm">💰 料金範囲</h3>
+                    <div className="space-y-1">
+                      <RadioOption
+                        value="all"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="すべて"
+                      />
+                      <RadioOption
+                        value="free"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="無料"
+                      />
+                      <RadioOption
+                        value="0-150k"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="0円 - 1,000円"
+                      />
+                      <RadioOption
+                        value="150k-600k"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="1,000円 - 4,000円"
+                      />
+                      <RadioOption
+                        value="250k-1m"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="1,500円 - 6,000円"
+                      />
+                      <RadioOption
+                        value="1m+"
+                        currentValue={priceRange}
+                        onChange={setPriceRange}
+                        label="6,000円以上"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-dashed border-gray-300 my-2"></div>
+
+                  {/* Age Range */}
+                  <div>
+                    <h3 className="font-black mb-2 text-sm">👨‍👩‍👧‍👦 対象年齢</h3>
+                    <div className="space-y-1">
+                      <RadioOption
+                        value="all"
+                        currentValue={ageRange}
+                        onChange={setAgeRange}
+                        label="すべて"
+                      />
+                      <RadioOption
+                        value="0-5"
+                        currentValue={ageRange}
+                        onChange={setAgeRange}
+                        label="0 - 5歳"
+                      />
+                      <RadioOption
+                        value="6-12"
+                        currentValue={ageRange}
+                        onChange={setAgeRange}
+                        label="6 - 12歳"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 p-4 border-t-2 border-black">
                   <button
                     onClick={handleApplyFilters}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="flex-1 py-3 bg-[#5BC0EB] border-2 border-black rounded-lg font-black shadow-[3px_3px_0_0_#000] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] active:shadow-[1px_1px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all flex items-center justify-center gap-2"
                   >
-                    <Search size={20} />
+                    <Filter size={18} />
+                    絞り込む
+                  </button>
+                  <button
+                    onClick={handleResetFilters}
+                    className="flex-1 py-3 bg-white border-2 border-black rounded-lg font-black shadow-[3px_3px_0_0_#000] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] active:shadow-[1px_1px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all"
+                  >
+                    リセット
                   </button>
                 </div>
-
-                <div className="border-t border-dashed border-gray-300 my-2"></div>
-
-                {/* Province/Area */}
-                <div>
-                  <h3 className="font-black mb-2 text-sm">フィルター</h3>
-                  <div className="space-y-2">
-                    <div className="relative">
-                      <select
-                        value={selectedProvince}
-                        onChange={(e) => setSelectedProvince(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
-                      >
-                        <option value="">都道府県</option>
-                        <option value="東京都">ハノイ</option>
-                        <option value="大阪府">ホーチミン</option>
-                        <option value="神奈川県">ダナン</option>
-                      </select>
-                      <ChevronDown
-                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                        size={16}
-                      />
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={selectedArea}
-                        onChange={(e) => setSelectedArea(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-black rounded-lg font-bold bg-white shadow-[2px_2px_0_0_#000] appearance-none cursor-pointer focus:outline-none transition-all text-sm"
-                      >
-                        <option value="">区・郡</option>
-                        <option value="渋谷区">ホアンキエム</option>
-                        <option value="中央区">ハイバーチュン</option>
-                        <option value="横浜市">タイホー</option>
-                      </select>
-                      <ChevronDown
-                        className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none"
-                        size={16}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="border-t border-dashed border-gray-300 my-2"></div>
-
-                {/* Price Range */}
-                <div>
-                  <h3 className="font-black mb-2 text-sm">💰 料金範囲</h3>
-                  <div className="space-y-1">
-                    <RadioOption
-                      value="all"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="すべて"
-                    />
-                    <RadioOption
-                      value="free"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="無料"
-                    />
-                    <RadioOption
-                      value="0-150k"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="0円 - 1,000円"
-                    />
-                    <RadioOption
-                      value="150k-600k"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="1,000円 - 4,000円"
-                    />
-                    <RadioOption
-                      value="250k-1m"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="1,500円 - 6,000円"
-                    />
-                    <RadioOption
-                      value="1m+"
-                      currentValue={priceRange}
-                      onChange={setPriceRange}
-                      label="6,000円以上"
-                    />
-                  </div>
-                </div>
-
-                <div className="border-t border-dashed border-gray-300 my-2"></div>
-
-                {/* Age Range */}
-                <div>
-                  <h3 className="font-black mb-2 text-sm">👨‍👩‍👧‍👦 対象年齢</h3>
-                  <div className="space-y-1">
-                    <RadioOption
-                      value="all"
-                      currentValue={ageRange}
-                      onChange={setAgeRange}
-                      label="すべて"
-                    />
-                    <RadioOption
-                      value="0-5"
-                      currentValue={ageRange}
-                      onChange={setAgeRange}
-                      label="0 - 5歳"
-                    />
-                    <RadioOption
-                      value="6-12"
-                      currentValue={ageRange}
-                      onChange={setAgeRange}
-                      label="6 - 12歳"
-                    />
-                  </div>
-                </div>
               </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 p-4 border-t-2 border-black">
-                <button
-                  onClick={handleApplyFilters}
-                  className="flex-1 py-3 bg-[#5BC0EB] border-2 border-black rounded-lg font-black shadow-[3px_3px_0_0_#000] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] active:shadow-[1px_1px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all flex items-center justify-center gap-2"
-                >
-                  <Filter size={18} />
-                  絞り込む
-                </button>
-                <button
-                  onClick={handleResetFilters}
-                  className="flex-1 py-3 bg-white border-2 border-black rounded-lg font-black shadow-[3px_3px_0_0_#000] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] active:shadow-[1px_1px_0_0_#000] active:translate-x-[0px] active:translate-y-[0px] transition-all"
-                >
-                  リセット
-                </button>
-              </div>
-            </div>
             </div>
           </div>
         </div>
