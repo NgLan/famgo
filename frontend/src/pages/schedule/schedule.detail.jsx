@@ -1,27 +1,748 @@
+// import React, { useState, useEffect } from "react";
+// import {
+//   Avatar,
+//   CircularProgress,
+//   Tooltip,
+// } from "@mui/material";
+// // THÊM Polyline VÀO IMPORT
+// import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
+// import 'leaflet/dist/leaflet.css';
+// import L from 'leaflet';
+// // Import MUI Icons
+// import FavoriteIcon from "@mui/icons-material/Favorite";
+// import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
+// import LocationOnIcon from "@mui/icons-material/LocationOn";
+// import DirectionsWalkIcon from "@mui/icons-material/DirectionsWalk";
+// import DirectionsBusIcon from "@mui/icons-material/DirectionsBus";
+// import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
+// import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
+// import AccessTimeIcon from "@mui/icons-material/AccessTime";
+// import WarningAmberIcon from "@mui/icons-material/WarningAmber";
+// import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+// import GroupIcon from "@mui/icons-material/Group";
+// import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+// import MenuBookIcon from "@mui/icons-material/MenuBook";
+// import NavigationIcon from "@mui/icons-material/Navigation";
+
+// import { useNavigate, useParams } from "react-router-dom";
+// import axios from "axios";
+// import TimelineCard from "../../components/location-card";
+// import { getCookie } from '../../helpers/cookies.helper';
+// import { likeDayPlan, unlikeDayPlan, checkLikeDayPlan } from '../../services/favorite.services';
+
+// const API_BASE_URL = "http://localhost:3000/api";
+
+// // Config Colors
+// const COLORS = {
+//   bg: '#FFFBF5',
+//   blue: '#5BC0EB',
+//   pink: '#FF90E8',
+//   yellow: '#FDE24F',
+//   red: '#FF6B6B'
+// };
+
+// // Fix Leaflet default marker icon issue
+// delete L.Icon.Default.prototype._getIconUrl;
+// L.Icon.Default.mergeOptions({
+//   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+//   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+//   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+// });
+
+// function ScheduleDetail() {
+//   const navigate = useNavigate();
+//   const { id } = useParams();
+//   const [scheduleData, setScheduleData] = useState(null);
+//   const [loading, setLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const [liked, setLiked] = useState(false);
+//   const [likesCount, setLikesCount] = useState(0);
+//   const [relatedPlaces, setRelatedPlaces] = useState([]);
+//   const [mapCenter, setMapCenter] = useState([21.0285, 105.8542]);
+//   const [mapZoom, setMapZoom] = useState(13);
+
+//   // Fetch schedule data from API
+//   useEffect(() => {
+//     const fetchScheduleData = async () => {
+//       try {
+//         setLoading(true);
+//         const response = await axios.get(`${API_BASE_URL}/day-plans/${id}`);
+
+//         if (response.data && response.data.data) {
+//           const rawData = response.data.data;
+
+//           if (typeof rawData.total_likes === 'number') {
+//             setLikesCount(rawData.total_likes);
+//           }
+
+//           const transformedData = {
+//             id: rawData._id,
+//             title: rawData.title,
+//             user: {
+//               name: rawData.user_id?.fullName || "Người dùng",
+//               avatar: rawData.user_id?.avatar || "",
+//             },
+//             overview: {
+//               price: calculateTotalPriceRange(rawData.items),
+//               time: getTimeRange(rawData.items),
+//               age: rawData.target_age || "すべての年齢",
+//               locations: rawData.items.length,
+//               note: rawData.note || ""
+//             },
+//             timeline: rawData.items.map((item, index) => ({
+//               id: item._id,
+//               type: "location",
+//               name: item.custom_place_name || "スポット",
+//               time: item.start_time,
+//               startTime: item.start_time,
+//               endTime: item.end_time,
+//               transport: mapTransport(item.transport),
+//               transportText: item.transport || "",
+//               image: item.image || "https://via.placeholder.com/800",
+//               openingHours: "N/A",
+//               estimatedCost: formatPriceRange(item.price_range),
+//               description: item.description || "",
+//               note: item.caution || "",
+//               hasWarning: !!item.caution,
+//               placeId: getPlaceIdString(item.place_id),
+//             })),
+//             warnings: rawData.items
+//               .filter(item => item.caution)
+//               .map(item => ({
+//                 location: item.custom_place_name || "スポット",
+//                 note: item.caution
+//               }))
+//           };
+
+//           setScheduleData(transformedData);
+
+//           const placeIds = rawData.items
+//             .map(item => getPlaceIdString(item.place_id))
+//             .filter(id => id && typeof id === 'string');
+
+//           if (placeIds.length > 0) {
+//             try {
+//               const placesPromises = placeIds.map(placeId =>
+//                 axios.get(`${API_BASE_URL}/places/${placeId}`)
+//               );
+
+//               const placesResponses = await Promise.allSettled(placesPromises);
+
+//               const places = placesResponses
+//                 .filter(result => result.status === 'fulfilled')
+//                 .map(res => res.value.data?.data)
+//                 .filter(place => place);
+
+//               let ageRangeText = rawData.target_age || "すべての年齢";
+//               if (places.length > 0) {
+//                 const ageRanges = places
+//                   .filter(place => place.age_limit && place.age_limit.min !== undefined && place.age_limit.max !== undefined)
+//                   .map(place => place.age_limit);
+
+//                 if (ageRanges.length > 0) {
+//                   const minAge = Math.max(...ageRanges.map(range => range.min));
+//                   const maxAge = Math.min(...ageRanges.map(range => range.max));
+
+//                   if (minAge <= maxAge) {
+//                     if (minAge === 0 && maxAge >= 100) {
+//                       ageRangeText = "すべての年齢";
+//                     } else if (minAge === maxAge) {
+//                       ageRangeText = `${minAge}歳`;
+//                     } else {
+//                       ageRangeText = `${minAge}歳 - ${maxAge}歳`;
+//                     }
+//                   } else {
+//                     ageRangeText = "共通の年齢範囲がありません";
+//                   }
+//                 }
+//               }
+
+//               transformedData.overview.age = ageRangeText;
+//               setScheduleData(transformedData);
+
+//               const relatedPlacesData = places.map(place => ({
+//                 id: place._id,
+//                 name: place.name,
+//                 image: place.images?.[0]?.url || "https://via.placeholder.com/300",
+//                 category: place.category_id?.name || "スポット",
+//                 location: place.location
+//               }));
+
+//               // Sắp xếp lại relatedPlacesData theo thứ tự trong Timeline
+//               const orderedRelatedPlaces = placeIds.map(pid => relatedPlacesData.find(p => p.id === pid)).filter(Boolean);
+
+//               setRelatedPlaces(orderedRelatedPlaces);
+
+//               const placesWithCoords = orderedRelatedPlaces.filter(
+//                 place => place.location?.coordinates &&
+//                   Array.isArray(place.location.coordinates) &&
+//                   place.location.coordinates.length === 2
+//               );
+
+//               if (placesWithCoords.length > 0) {
+//                 const avgLat = placesWithCoords.reduce((sum, place) =>
+//                   sum + place.location.coordinates[1], 0) / placesWithCoords.length;
+//                 const avgLng = placesWithCoords.reduce((sum, place) =>
+//                   sum + place.location.coordinates[0], 0) / placesWithCoords.length;
+//                 setMapCenter([avgLat, avgLng]);
+
+//                 if (placesWithCoords.length === 1) {
+//                   setMapZoom(15);
+//                 } else {
+//                   setMapZoom(13);
+//                 }
+//               }
+//             } catch (err) {
+//               console.error('Error fetching related places:', err);
+//             }
+//           }
+
+//           try {
+//             const userStr = getCookie('user');
+//             if (userStr) {
+//               const user = JSON.parse(userStr);
+//               const chk = await checkLikeDayPlan(user._id, id);
+//               if (chk && chk.data && typeof chk.data.is_liked !== 'undefined') {
+//                 setLiked(!!chk.data.is_liked);
+//               }
+//             }
+//           } catch (e) {
+//             // ignore
+//           }
+//         }
+//       } catch (err) {
+//         console.error("Error fetching schedule:", err);
+//         setError(err.message || "データを読み込めませんでした");
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     if (id) {
+//       fetchScheduleData();
+//     }
+//   }, [id]);
+
+//   const getPlaceIdString = (placeIdData) => {
+//     if (!placeIdData) return null;
+//     if (typeof placeIdData === 'string') return placeIdData;
+//     if (typeof placeIdData === 'object' && placeIdData._id) return placeIdData._id;
+//     return null;
+//   };
+
+//   const formatPriceRange = (priceRange) => {
+//     if (!priceRange || (!priceRange.min && !priceRange.max)) return "無料";
+//     if (priceRange.min === priceRange.max || !priceRange.max) {
+//       return `${priceRange.min.toLocaleString()}đ`;
+//     }
+//     return `${priceRange.min.toLocaleString()}đ - ${priceRange.max.toLocaleString()}đ`;
+//   };
+
+//   const calculateTotalPriceRange = (items) => {
+//     if (!items || items.length === 0) return "無料";
+//     let totalMin = 0;
+//     let totalMax = 0;
+//     items.forEach(item => {
+//       if (item.price_range) {
+//         totalMin += item.price_range.min || 0;
+//         totalMax += item.price_range.max || item.price_range.min || 0;
+//       }
+//     });
+//     if (totalMin === 0 && totalMax === 0) return "無料";
+//     if (totalMin === totalMax) return `${totalMin.toLocaleString()}đ`;
+//     return `${totalMin.toLocaleString()}đ - ${totalMax.toLocaleString()}đ`;
+//   };
+
+//   const getTimeRange = (items) => {
+//     if (!items || items.length === 0) return "-";
+//     const firstTime = items[0]?.start_time;
+//     const lastTime = items[items.length - 1]?.end_time;
+//     if (!firstTime || !lastTime) return "-";
+//     return `${firstTime} - ${lastTime}`;
+//   };
+
+//   const mapTransport = (transport) => {
+//     const transportMap = {
+//       "Ô tô": "car",
+//       "Xe máy": "bike",
+//       "Đi bộ": "walk",
+//       "Xe bus": "bus",
+//       "Xe đạp": "bike"
+//     };
+//     return transportMap[transport] || "walk";
+//   };
+
+//   const getTransportIcon = (transport) => {
+//     const iconStyle = { color: "#000", fontSize: 20 };
+//     switch (transport) {
+//       case "walk": return <DirectionsWalkIcon sx={iconStyle} />;
+//       case "bus": return <DirectionsBusIcon sx={iconStyle} />;
+//       case "bike": return <DirectionsBikeIcon sx={iconStyle} />;
+//       case "car": return <DirectionsCarIcon sx={iconStyle} />;
+//       default: return <DirectionsWalkIcon sx={iconStyle} />;
+//     }
+//   };
+
+//   const scrollToLocation = (itemId) => {
+//     const element = document.getElementById(`location-card-${itemId}`);
+//     if (element) {
+//       element.scrollIntoView({
+//         behavior: 'smooth',
+//         block: 'center'
+//       });
+//     }
+//   };
+
+//   const handleOpenGoogleMaps = () => {
+//     const validPlaces = relatedPlaces.filter(
+//       (place) =>
+//         place.location?.coordinates &&
+//         Array.isArray(place.location.coordinates) &&
+//         place.location.coordinates.length === 2
+//     );
+
+//     if (validPlaces.length === 0) return;
+
+//     const coords = validPlaces.map(
+//       (p) => `${p.location.coordinates[1]},${p.location.coordinates[0]}`
+//     );
+
+//     let url = "https://www.google.com/maps/dir/?api=1";
+
+//     if (coords.length === 1) {
+//       url += `&destination=${coords[0]}`;
+//     } else {
+//       const origin = coords[0];
+//       const destination = coords[coords.length - 1];
+
+//       if (coords.length > 2) {
+//         const waypoints = coords.slice(1, -1).join('|');
+//         url += `&origin=${origin}&destination=${destination}&waypoints=${waypoints}`;
+//       } else {
+//         url += `&origin=${origin}&destination=${destination}`;
+//       }
+//     }
+
+//     window.open(url, '_blank');
+//   };
+
+//   const createNumberedIcon = (index) => {
+//     return new L.DivIcon({
+//       html: `
+//         <div style="
+//           background-color: ${index === 0 ? '#4caf50' : (index === relatedPlaces.length - 1 ? '#FF6B6B' : '#5BC0EB')};
+//           border: 2px solid black;
+//           width: 30px;
+//           height: 30px;
+//           border-radius: 50%;
+//           display: flex;
+//           align-items: center;
+//           justify-content: center;
+//           font-weight: 900;
+//           font-size: 14px;
+//           color: white;
+//           box-shadow: 2px 2px 0px 0px rgba(0,0,0,1);
+//         ">
+//           ${index + 1}
+//         </div>
+//       `,
+//       className: 'custom-numbered-icon',
+//       iconSize: [30, 30],
+//       iconAnchor: [15, 15],
+//       popupAnchor: [0, -15]
+//     });
+//   };
+
+//   // --- LẤY DANH SÁCH TỌA ĐỘ CHO POLYLINE ---
+//   // Lấy lat/lng từ relatedPlaces (đã sắp xếp đúng thứ tự)
+//   const polylinePositions = relatedPlaces
+//     .filter(p => p.location?.coordinates?.length === 2)
+//     .map(p => [p.location.coordinates[1], p.location.coordinates[0]]); // [Lat, Lng] cho Leaflet
+//   // ----------------------------------------
+
+//   if (loading) {
+//     return (
+//       <div className="flex justify-center items-center min-h-screen" style={{ backgroundColor: COLORS.bg }}>
+//         <CircularProgress sx={{ color: 'black' }} />
+//       </div>
+//     );
+//   }
+
+//   if (error || !scheduleData) {
+//     return (
+//       <div className="flex justify-center items-center min-h-screen" style={{ backgroundColor: COLORS.bg }}>
+//         <div className="p-8 text-center bg-white border-2 border-black shadow-[4px_4px_0_0_#000] rounded-xl">
+//           <h2 className="text-xl font-bold text-red-500 mb-4">{error || "スケジュールが見つかりません"}</h2>
+//           <button
+//             onClick={() => navigate("/schedule")}
+//             className="px-6 py-2 bg-[#5BC0EB] border-2 border-black font-bold shadow-[2px_2px_0_0_#000] active:translate-y-1 active:shadow-none transition-all rounded-lg"
+//           >
+//             戻る
+//           </button>
+//         </div>
+//       </div>
+//     );
+//   }
+
+//   return (
+//     <div className="min-h-screen py-6" style={{ backgroundColor: COLORS.bg, fontFamily: 'sans-serif' }}>
+//       <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
+
+//         {/* === HEADER === */}
+//         <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000]">
+//           <div className="flex items-center gap-4 w-full md:w-auto">
+//             <button
+//               onClick={() => navigate("/schedule")}
+//               className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full hover:bg-gray-100 shadow-[2px_2px_0_0_#000] transition-all"
+//             >
+//               <ArrowBackIcon />
+//             </button>
+
+//             <div className="flex-1 md:flex-none">
+//               <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight">{scheduleData.title}</h1>
+//               <div className="flex items-center gap-2 mt-1">
+//                 <Avatar src={scheduleData.user.avatar} sx={{ width: 24, height: 24, border: '1px solid black' }} />
+//                 <span className="font-bold text-sm text-gray-700">{scheduleData.user.name}</span>
+//               </div>
+//             </div>
+//           </div>
+
+//           <button
+//             onClick={async () => {
+//               const userStr = getCookie('user');
+//               if (!userStr) {
+//                 return navigate('/login');
+//               }
+//               const user = JSON.parse(userStr);
+//               try {
+//                 if (liked) {
+//                   await unlikeDayPlan(user._id, id);
+//                   setLiked(false);
+//                   setLikesCount((c) => Math.max(0, c - 1));
+//                 } else {
+//                   await likeDayPlan(user._id, id);
+//                   setLiked(true);
+//                   setLikesCount((c) => c + 1);
+//                 }
+//               } catch (err) {
+//                 console.error('Like toggle error', err);
+//               }
+//             }}
+//             className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] hover:bg-red-50 active:translate-y-1 active:shadow-none transition-all"
+//           >
+//             {liked ? <FavoriteIcon sx={{ color: "#f44336" }} /> : <FavoriteBorderIcon />}
+//             <span className="font-black text-lg">{likesCount}</span>
+//           </button>
+//         </div>
+
+//         {/* === TIMELINE OVERVIEW (ĐÃ BỎ NÚT START) === */}
+//         <div className="mb-8 bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000] overflow-x-auto">
+//           <div className="min-w-max flex items-center px-4 relative">
+// /* START NODE */
+//             {scheduleData.timeline.length > 0 && (
+//               <div className="flex items-center relative z-10">
+//                 <div className="flex flex-col items-center px-2 min-w-[120px]">
+//                   <div className="w-14 h-14 rounded-full bg-[#4caf50] border-2 border-black flex items-center justify-center text-white shadow-[2px_2px_0_0_#000]">
+//                     <HomeIcon sx={{ fontSize: 30 }} />
+//                   </div>
+//                   <span className="mt-2 text-xs font-black uppercase tracking-wider">出発</span>
+//                 </div>
+
+//                 {/* Arrow */}
+//                 <div className="flex items-center mx-4">
+//                   <div className="w-10 h-10 rounded-full bg-[#E3F2FD] border-2 border-black flex items-center justify-center shadow-sm z-10">
+//                     {getTransportIcon(scheduleData.timeline[0].transport)}
+//                   </div>
+//                   <div className="h-[2px] w-[80px] bg-black -ml-1"></div>
+//                   <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+//                 </div>
+//               </div>
+//             )}
+//             {/* LOCATION NODES */}
+//             {scheduleData.timeline.map((item, index) => (
+//               <div key={item.id} className="flex items-center relative z-10">
+//                 {/* Node */}
+//                 <Tooltip title={item.note || ""} arrow placement="top">
+//                   <div
+//                     onClick={() => scrollToLocation(item.id)}
+//                     className="flex flex-col items-center px-2 min-w-[120px] cursor-pointer group"
+//                   >
+//                     <div className="relative w-14 h-14 rounded-full bg-white border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000] group-hover:-translate-y-1 group-hover:bg-[#f0f7ff] transition-all">
+//                       <LocationOnIcon sx={{ color: COLORS.blue, fontSize: 28 }} />
+//                       {item.hasWarning && (
+//                         <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FDE24F] border border-black rounded-full flex items-center justify-center">
+//                           <WarningAmberIcon sx={{ fontSize: 12, color: "black" }} />
+//                         </div>
+//                       )}
+//                     </div>
+//                     <span className="mt-2 text-xs font-bold text-[#1976d2]">{item.startTime}{item.endTime ? ` - ${item.endTime}` : ''}</span>
+//                     <span className="text-xs font-bold text-center max-w-[100px] truncate">{item.name}</span>
+//                   </div>
+//                 </Tooltip>
+
+//                 {/* Arrow to Next (NỐI TIẾP) */}
+//                 {index < scheduleData.timeline.length - 1 && (
+//                   <div className="flex items-center mx-4">
+//                     <div className="w-10 h-10 rounded-full bg-[#E3F2FD] border-2 border-black flex items-center justify-center shadow-sm z-10">
+//                       {getTransportIcon(scheduleData.timeline[index + 1].transport)}
+//                     </div>
+//                     <div className="h-[2px] w-[80px] bg-black -ml-1"></div>
+//                     <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+//                   </div>
+//                 )}
+//               </div>
+//             ))}
+//           </div>
+//         </div>
+
+//         {/* === MAIN CONTENT GRID === */}
+//         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+//           {/* LEFT: VERTICAL TIMELINE */}
+//           <div className="md:col-span-8">
+//             {scheduleData.timeline.map((item, index) => (
+//               <div key={item.id} className="relative flex mb-8">
+
+//                 {/* 1. LINE */}
+//                 {index < scheduleData.timeline.length - 1 && (
+//                   <div className="absolute left-10 -translate-x-1/2 top-[60px] bottom-[-32px] w-[2px] bg-black z-0"></div>
+//                 )}
+
+//                 {/* 2. LEFT COLUMN (Time & Icon) */}
+//                 <div className="flex flex-col items-center min-w-[80px] relative z-10">
+//                   <span className="text-sm font-black mb-2">{item.time}</span>
+
+//                   <div className="w-10 h-10 rounded-full bg-white border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
+//                     <LocationOnIcon sx={{ color: COLORS.blue }} />
+//                   </div>
+//                 </div>
+
+//                 {/* 3. MIDDLE ICON (Transport) */}
+//                 {index < scheduleData.timeline.length - 1 && (
+//                   <div className="absolute top-[55%] left-10 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border-2 border-black rounded-full flex items-center justify-center z-20 shadow-sm">
+//                     {React.cloneElement(getTransportIcon(scheduleData.timeline[index + 1].transport), { sx: { fontSize: 16 } })}
+//                   </div>
+//                 )}
+
+//                 {/* 4. RIGHT CONTENT (Card) */}
+//                 <div className="flex-1 pl-4">
+//                   <TimelineCard
+//                     location={item}
+//                     navigate={navigate}
+//                     containerId={`location-card-${item.id}`}
+//                   />
+//                 </div>
+//               </div>
+//             ))}
+//           </div>
+
+//           {/* RIGHT: SIDEBAR */}
+//           <div className="md:col-span-4 flex flex-col gap-6">
+
+//             {/* OVERVIEW BOX */}
+//             <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+//               <h3 className="text-lg font-black mb-3">基本情報</h3>
+//               <div className="border-t-2 border-black mb-3"></div>
+
+//               <div className="space-y-3">
+//                 {/* Price */}
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
+//                     <AttachMoneyIcon sx={{ fontSize: 20, color: 'black' }} />
+//                   </div>
+//                   <div>
+//                     <div className="text-xs text-gray-600 font-bold">料金</div>
+//                     <div className="font-bold">{scheduleData.overview.price}</div>
+//                   </div>
+//                 </div>
+
+//                 {/* Time */}
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.blue }}>
+//                     <AccessTimeIcon sx={{ fontSize: 20, color: 'black' }} />
+//                   </div>
+//                   <div>
+//                     <div className="text-xs text-gray-600 font-bold">営業時間</div>
+//                     <div className="font-bold">{scheduleData.overview.time}</div>
+//                   </div>
+//                 </div>
+
+//                 {/* Age */}
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.yellow }}>
+//                     <GroupIcon sx={{ fontSize: 20, color: 'black' }} />
+//                   </div>
+//                   <div>
+//                     <div className="text-xs text-gray-600 font-bold">対象年齢</div>
+//                     <div className="font-bold">{scheduleData.overview.age}</div>
+//                   </div>
+//                 </div>
+
+//                 {/* Locations */}
+//                 <div className="flex items-center gap-3">
+//                   <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
+//                     <LocationOnIcon sx={{ fontSize: 20, color: 'black' }} />
+//                   </div>
+//                   <div>
+//                     <div className="text-xs text-gray-600 font-bold">場所</div>
+//                     <div className="font-bold">{scheduleData.overview.locations} 箇所</div>
+//                   </div>
+//                 </div>
+//               </div>
+
+//               {/* Note */}
+//               {scheduleData.overview.note && (
+//                 <>
+//                   <div className="border-t-2 border-black my-3"></div>
+//                   <div className="flex gap-2 items-start text-sm bg-gray-50 p-2 rounded border border-gray-200">
+//                     <MenuBookIcon sx={{ fontSize: 20 }} className="mt-0.5 flex-shrink-0 text-gray-600" />
+//                     <span className="text-gray-700">{scheduleData.overview.note}</span>
+//                   </div>
+//                 </>
+//               )}
+//             </div>
+
+//             {/* WARNINGS BOX */}
+//             <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+//               <h3 className="text-lg font-black mb-3 flex items-center gap-2">
+//                 <WarningAmberIcon sx={{ color: '#ed6c02' }} /> 注意
+//               </h3>
+//               <div className="space-y-3">
+//                 {scheduleData.warnings.map((warning, index) => (
+//                   <div key={index} className="bg-[#FFF3E0] border border-[#ED6C02] rounded-lg p-3">
+//                     <div className="font-black text-sm text-[#E65100]">{warning.location}</div>
+//                     <div className="text-xs text-[#E65100] mt-1">{warning.note}</div>
+//                   </div>
+//                 ))}
+//               </div>
+//             </div>
+
+//             {/* MAP BOX */}
+//             <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+//               <h3 className="text-lg font-black mb-3">地図</h3>
+//               <div className="w-full h-[300px] rounded-lg border-2 border-black overflow-hidden relative z-0 mb-3">
+//                 {relatedPlaces.length > 0 ? (
+//                   <MapContainer
+//                     center={mapCenter}
+//                     zoom={mapZoom}
+//                     scrollWheelZoom={true}
+//                     style={{ height: '100%', width: '100%' }}
+//                   >
+//                     <TileLayer
+//                       attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+//                       url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+//                     />
+
+//                     {/* VẼ ĐƯỜNG NỐI (POLYLINE) */}
+//                     {polylinePositions.length > 1 && (
+//                       <Polyline
+//                         positions={polylinePositions}
+//                         pathOptions={{ color: 'black', weight: 4, dashArray: '10, 10' }}
+//                       />
+//                     )}
+
+//                     {relatedPlaces
+//                       .filter(place =>
+//                         place.location?.coordinates &&
+//                         Array.isArray(place.location.coordinates) &&
+//                         place.location.coordinates.length === 2
+//                       )
+//                       .map((place, index) => (
+//                         <Marker
+//                           key={place.id}
+//                           position={[
+//                             place.location.coordinates[1],
+//                             place.location.coordinates[0]
+//                           ]}
+//                           icon={createNumberedIcon(index)}
+//                         >
+//                           <Popup>
+//                             <div className="min-w-[120px]">
+//                               <div className="font-bold text-sm text-[#5BC0EB]">#{index + 1}</div>
+//                               <div className="font-bold text-sm">{place.name}</div>
+//                               <div className="text-xs text-gray-500">{place.category}</div>
+//                             </div>
+//                           </Popup>
+//                         </Marker>
+//                       ))
+//                     }
+//                   </MapContainer>
+//                 ) : (
+//                   <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+//                     地図データがありません
+//                   </div>
+//                 )}
+//               </div>
+
+//               {/* GOOGLE MAPS BUTTON */}
+//               {relatedPlaces.some(p => p.location?.coordinates) && (
+//                 <button
+//                   onClick={handleOpenGoogleMaps}
+//                   className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all group"
+//                   style={{ backgroundColor: COLORS.pink }}
+//                   onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.blue}
+//                   onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.pink}
+//                 >
+//                   <NavigationIcon sx={{ fontSize: 20 }} />
+//                   <span>行き方</span>
+//                 </button>
+//               )}
+//             </div>
+
+//           </div>
+//         </div>
+
+//         {/* === RELATED PLACES === */}
+//         {relatedPlaces.length > 0 && (
+//           <div className="mt-12">
+//             <h2 className="text-2xl font-black mb-6 uppercase flex items-center gap-2">
+//               <span className="w-4 h-8 bg-[#FF90E8] border-2 border-black inline-block -skew-x-12"></span>
+//               関連する場所
+//             </h2>
+//             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+//               {relatedPlaces.map((place) => (
+//                 <div
+//                   key={place.id}
+//                   onClick={() => navigate(`/places/${place.id}`)}
+//                   className="bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] transition-all cursor-pointer group"
+//                 >
+//                   <div className="h-48 border-b-2 border-black relative">
+//                     <img
+//                       src={place.image}
+//                       alt={place.name}
+//                       className="w-full h-full object-cover"
+//                     />
+//                     <div className="absolute top-2 left-2 bg-white border-2 border-black px-2 py-0.5 text-xs font-bold rounded shadow-sm">
+//                       {place.category}
+//                     </div>
+//                   </div>
+//                   <div className="p-4">
+//                     <h4 className="font-bold text-lg truncate group-hover:text-[#5BC0EB] transition-colors">{place.name}</h4>
+//                   </div>
+//                 </div>
+//               ))}
+//             </div>
+//           </div>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// }
+
+// export default ScheduleDetail;
+
+// ================= C2 =================
 import React, { useState, useEffect } from "react";
 import {
   Avatar,
-  Box,
-  Button,
-  Card,
-  CardContent,
-  CardMedia,
-  Chip,
-  Collapse,
-  Divider,
-  Grid,
-  IconButton,
-  Paper,
-  Stack,
-  Tooltip,
-  Typography,
   CircularProgress,
-  tooltipClasses, Zoom
+  Tooltip,
 } from "@mui/material";
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import './schedule.detail.css';
 import L from 'leaflet';
+// Import MUI Icons
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import HomeIcon from "@mui/icons-material/Home";
@@ -32,19 +753,30 @@ import DirectionsBikeIcon from "@mui/icons-material/DirectionsBike";
 import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import GroupIcon from "@mui/icons-material/Group";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import NavigationIcon from "@mui/icons-material/Navigation";
+
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
+import TimelineCard from "../../components/location-card";
 import { getCookie } from '../../helpers/cookies.helper';
 import { likeDayPlan, unlikeDayPlan, checkLikeDayPlan } from '../../services/favorite.services';
-import { styled } from '@mui/material/styles';
+
 const API_BASE_URL = "http://localhost:3000/api";
 
-// Fix Leaflet default marker icon issue
+// Config Colors
+const COLORS = {
+  bg: '#FFFBF5',
+  blue: '#5BC0EB',
+  pink: '#FF90E8',
+  yellow: '#FDE24F',
+  red: '#FF6B6B'
+};
+
+// --- FIX LEAFLET ICON (QUAN TRỌNG) ---
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
   iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
@@ -52,138 +784,19 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// Component cho một điểm trên timeline
-function TimelineCard({ location, onToggleDescription, onToggleNote, expandedDesc, expandedNote, navigate }) {
-  const timeLabel = location.startTime
-    ? `${location.startTime}${location.endTime ? ` - ${location.endTime}` : ''}`
-    : location.time || "時間未設定";
+// 1. Tạo biến Icon Mặc định (Xanh)
+const defaultIcon = new L.Icon.Default();
 
-  return (
-    <Card className="timeline-card">
-      <Box className="card-image-overlay">
-        {/* Bỏ thuộc tính height cứng, để CSS class .card-image-overlay quản lý chiều cao */}
-        <CardMedia
-          component="img"
-          image={location.image}
-          alt={location.name}
-          // CSS đã xử lý width 100% và object-fit cover
-        />
-        {location.hasWarning && (
-          <Chip
-            icon={<WarningAmberIcon />}
-            label="注意"
-            size="small"
-            className="chip-elevated-pink"
-            sx={{ position: "absolute", top: 8, right: 8 }}
-          />
-        )}
-      </Box>
-      <CardContent>
-        <Stack spacing={1.5}>
-          <Typography variant="h6" fontWeight={700} color="#2C3E50">
-            {location.name}
-          </Typography>
-
-          <Stack direction="row" spacing={2} flexWrap="wrap">
-            <Chip
-              icon={<AccessTimeIcon />}
-              label={timeLabel}
-              size="small"
-              className="chip-elevated-blue"
-            />
-            <Chip
-              icon={<AttachMoneyIcon />}
-              label={location.estimatedCost}
-              size="small"
-              className="chip-elevated"
-              sx={{ color: '#2C3E50' }}
-            />
-          </Stack>
-
-          {/* ... (Phần Description, Note, Button giữ nguyên) ... */}
-           {/* 説明 */}
-          <Box>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                説明
-              </Typography>
-              <IconButton 
-                size="small" 
-                onClick={() => onToggleDescription(location.id)}
-                className="icon-btn-elevated"
-              >
-                {expandedDesc ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              </IconButton>
-            </Stack>
-            <Collapse in={expandedDesc}>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                {location.description || "説明はありません"}
-              </Typography>
-            </Collapse>
-          </Box>
-
-          {/* 注意事項 */}
-          {location.note && (
-            <Box className="warning-card" sx={{ p: 1.5, borderRadius: 2 }}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <WarningAmberIcon fontSize="small" sx={{ color: '#FFB84D' }} />
-                  <Typography variant="body2" color="text.secondary" fontWeight={700}>
-                    注意事項
-                  </Typography>
-                </Stack>
-                <IconButton 
-                  size="small" 
-                  onClick={() => onToggleNote(location.id)}
-                  className="icon-btn-elevated"
-                >
-                  {expandedNote ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-                </IconButton>
-              </Stack>
-              <Collapse in={expandedNote}>
-                <Typography variant="body2" sx={{ mt: 1, color: '#D97706' }}>
-                  {location.note}
-                </Typography>
-              </Collapse>
-            </Box>
-          )}
-
-          <Button
-            className="btn-primary"
-            size="small"
-            sx={{ alignSelf: "flex-start" }}
-            onClick={() => location.placeId && navigate(`/places/${location.placeId}`)}
-          >
-            詳細を見る
-          </Button>
-        </Stack>
-      </CardContent>
-    </Card>
-  );
-}
-
-const CuteTooltip = styled(({ className, ...props }) => (
-  <Tooltip {...props} arrow classes={{ popper: className }} TransitionComponent={Zoom} />
-))(({ theme }) => ({
-  [`& .${tooltipClasses.tooltip}`]: {
-    backgroundColor: '#FFF9C4', // Màu nền Vàng kem
-    color: '#333333', // Chữ đen
-    border: '2px solid #FBC02D', // Viền vàng đậm
-    fontSize: '0.75rem',
-    borderRadius: '12px', // Bo tròn
-    fontWeight: 700,
-    padding: '8px 12px',
-    fontFamily: '"M PLUS Rounded 1c", "Kosugi Maru", sans-serif', // Font cute
-    boxShadow: '2px 2px 0px rgba(0,0,0,0.1)', // Bóng nhẹ
-    maxWidth: 200, // Giới hạn chiều rộng nếu text dài
-  },
-  [`& .${tooltipClasses.arrow}`]: {
-    color: '#FBC02D', // Mũi tên màu vàng đậm trùng màu viền
-    "&:before": {
-        border: '2px solid #FBC02D', // (Tuỳ chọn) Viền cho mũi tên nếu cần sắc nét hơn
-    }
-  },
-}));
+// 2. Tạo biến Icon Đỏ
+const redIcon = new L.Icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
+// --------------------------------------
 
 function ScheduleDetail() {
   const navigate = useNavigate();
@@ -193,10 +806,8 @@ function ScheduleDetail() {
   const [error, setError] = useState(null);
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(0);
-  const [expandedDesc, setExpandedDesc] = useState({});
-  const [expandedNote, setExpandedNote] = useState({});
   const [relatedPlaces, setRelatedPlaces] = useState([]);
-  const [mapCenter, setMapCenter] = useState([21.0285, 105.8542]); // Default: Hanoi
+  const [mapCenter, setMapCenter] = useState([21.0285, 105.8542]);
   const [mapZoom, setMapZoom] = useState(13);
 
   // Fetch schedule data from API
@@ -205,20 +816,19 @@ function ScheduleDetail() {
       try {
         setLoading(true);
         const response = await axios.get(`${API_BASE_URL}/day-plans/${id}`);
-        console.log("👉 Dữ liệu API trả về:", response.data.data); // Xem cái này
-console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái này
 
         if (response.data && response.data.data) {
           const rawData = response.data.data;
-          
-          // Transform API response to match component's expected structure
+
+          if (typeof rawData.total_likes === 'number') {
+            setLikesCount(rawData.total_likes);
+          }
+
           const transformedData = {
             id: rawData._id,
             title: rawData.title,
             user: {
-              // Ở trang list bạn dùng user.fullName, nên ở đây tui cũng map tương tự
-              // Thêm fallback user.name đề phòng backend trả về field khác
-              name: rawData.user_id?.fullName || rawData.user_id?.name || "Ẩn danh", 
+              name: rawData.user_id?.fullName || "Người dùng",
               avatar: rawData.user_id?.avatar || "",
             },
             overview: {
@@ -235,7 +845,6 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
               time: item.start_time,
               startTime: item.start_time,
               endTime: item.end_time,
-              duration: calculateDuration(item.start_time, item.end_time),
               transport: mapTransport(item.transport),
               transportText: item.transport || "",
               image: item.image || "https://via.placeholder.com/800",
@@ -244,7 +853,7 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
               description: item.description || "",
               note: item.caution || "",
               hasWarning: !!item.caution,
-              placeId: item.place_id?._id || item.place_id,// Add place_id for navigation
+              placeId: getPlaceIdString(item.place_id),
             })),
             warnings: rawData.items
               .filter(item => item.caution)
@@ -253,43 +862,36 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
                 note: item.caution
               }))
           };
-          
-          setScheduleData(transformedData);
-          
-          if (typeof rawData.likes === 'number') {
-            setLikesCount(rawData.likes);
-          } else if (typeof rawData.total_likes === 'number') {
-             // Phòng hờ backend trả về tên biến khác
-            setLikesCount(rawData.total_likes);
-          }
 
-          // Fetch related places
+          setScheduleData(transformedData);
+
           const placeIds = rawData.items
-            .map(item => item.place_id?._id || item.place_id)
-            .filter(placeId => placeId); // Filter out null/undefined
-          
+            .map(item => getPlaceIdString(item.place_id))
+            .filter(id => id && typeof id === 'string');
+
           if (placeIds.length > 0) {
             try {
-              const placesPromises = placeIds.map(placeId => 
+              const placesPromises = placeIds.map(placeId =>
                 axios.get(`${API_BASE_URL}/places/${placeId}`)
               );
-              const placesResponses = await Promise.all(placesPromises);
+
+              const placesResponses = await Promise.allSettled(placesPromises);
+
               const places = placesResponses
-                .map(res => res.data?.data)
-                .filter(place => place); // Filter out failed requests
-              
-              // Calculate age range intersection
+                .filter(result => result.status === 'fulfilled')
+                .map(res => res.value.data?.data)
+                .filter(place => place);
+
               let ageRangeText = rawData.target_age || "すべての年齢";
               if (places.length > 0) {
                 const ageRanges = places
                   .filter(place => place.age_limit && place.age_limit.min !== undefined && place.age_limit.max !== undefined)
                   .map(place => place.age_limit);
-                
+
                 if (ageRanges.length > 0) {
-                  // Find intersection of all age ranges
                   const minAge = Math.max(...ageRanges.map(range => range.min));
                   const maxAge = Math.min(...ageRanges.map(range => range.max));
-                  
+
                   if (minAge <= maxAge) {
                     if (minAge === 0 && maxAge >= 100) {
                       ageRangeText = "すべての年齢";
@@ -303,36 +905,36 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
                   }
                 }
               }
-              
-              // Update transformedData with calculated age range
+
               transformedData.overview.age = ageRangeText;
               setScheduleData(transformedData);
-              
-              // Set related places for display with coordinates
+
               const relatedPlacesData = places.map(place => ({
                 id: place._id,
                 name: place.name,
                 image: place.images?.[0]?.url || "https://via.placeholder.com/300",
                 category: place.category_id?.name || "スポット",
-                location: place.location // Include location coordinates
+                location: place.location
               }));
-              setRelatedPlaces(relatedPlacesData);
-              
-              // Calculate map center from places with valid coordinates
-              const placesWithCoords = relatedPlacesData.filter(
-                place => place.location?.coordinates && 
-                Array.isArray(place.location.coordinates) && 
-                place.location.coordinates.length === 2
+
+              // Sắp xếp lại relatedPlacesData theo thứ tự trong Timeline
+              const orderedRelatedPlaces = placeIds.map(pid => relatedPlacesData.find(p => p.id === pid)).filter(Boolean);
+
+              setRelatedPlaces(orderedRelatedPlaces);
+
+              const placesWithCoords = orderedRelatedPlaces.filter(
+                place => place.location?.coordinates &&
+                  Array.isArray(place.location.coordinates) &&
+                  place.location.coordinates.length === 2
               );
-              
+
               if (placesWithCoords.length > 0) {
-                const avgLat = placesWithCoords.reduce((sum, place) => 
+                const avgLat = placesWithCoords.reduce((sum, place) =>
                   sum + place.location.coordinates[1], 0) / placesWithCoords.length;
-                const avgLng = placesWithCoords.reduce((sum, place) => 
+                const avgLng = placesWithCoords.reduce((sum, place) =>
                   sum + place.location.coordinates[0], 0) / placesWithCoords.length;
                 setMapCenter([avgLat, avgLng]);
-                
-                // Adjust zoom based on spread of locations
+
                 if (placesWithCoords.length === 1) {
                   setMapZoom(15);
                 } else {
@@ -343,8 +945,7 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
               console.error('Error fetching related places:', err);
             }
           }
-          
-          // Check like status if user logged in
+
           try {
             const userStr = getCookie('user');
             if (userStr) {
@@ -352,7 +953,6 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
               const chk = await checkLikeDayPlan(user._id, id);
               if (chk && chk.data && typeof chk.data.is_liked !== 'undefined') {
                 setLiked(!!chk.data.is_liked);
-                if (typeof chk.data.total_likes === 'number') setLikesCount(chk.data.total_likes);
               }
             }
           } catch (e) {
@@ -372,23 +972,11 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
     }
   }, [id]);
 
-  // Helper functions for data transformation
-  const calculateDuration = (startTime, endTime) => {
-    if (!startTime || !endTime) return "";
-    const [startHour, startMin] = startTime.split(':').map(Number);
-    const [endHour, endMin] = endTime.split(':').map(Number);
-    const startMinutes = startHour * 60 + startMin;
-    const endMinutes = endHour * 60 + endMin;
-    const diffMinutes = endMinutes - startMinutes;
-
-    if (diffMinutes <= 0) return "";
-
-    const hours = Math.floor(diffMinutes / 60);
-    const minutes = diffMinutes % 60;
-
-    if (hours === 0) return `${minutes}分`;
-    if (minutes === 0) return `${hours}時間`;
-    return `${hours}時間${minutes}分`;
+  const getPlaceIdString = (placeIdData) => {
+    if (!placeIdData) return null;
+    if (typeof placeIdData === 'string') return placeIdData;
+    if (typeof placeIdData === 'object' && placeIdData._id) return placeIdData._id;
+    return null;
   };
 
   const formatPriceRange = (priceRange) => {
@@ -433,457 +1021,435 @@ console.log("👉 User trong API:", response.data.data.user); // Soi kỹ cái n
     return transportMap[transport] || "walk";
   };
 
-  const handleToggleDescription = (id) => {
-    setExpandedDesc((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
-  const handleToggleNote = (id) => {
-    setExpandedNote((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
-
   const getTransportIcon = (transport) => {
+    const iconStyle = { color: "#000", fontSize: 20 };
     switch (transport) {
-      case "walk":
-        return <DirectionsWalkIcon sx={{ color: "#fff", fontSize: 24 }} />;
-      case "bus":
-        return <DirectionsBusIcon sx={{ color: "#fff", fontSize: 24 }} />;
-      case "bike":
-        return <DirectionsBikeIcon sx={{ color: "#fff", fontSize: 24 }} />;
-      case "car":
-        return <DirectionsCarIcon sx={{ color: "#fff", fontSize: 24 }} />;
-      default:
-        return <DirectionsWalkIcon sx={{ color: "#fff", fontSize: 24 }} />;
+      case "walk": return <DirectionsWalkIcon sx={iconStyle} />;
+      case "bus": return <DirectionsBusIcon sx={iconStyle} />;
+      case "bike": return <DirectionsBikeIcon sx={iconStyle} />;
+      case "car": return <DirectionsCarIcon sx={iconStyle} />;
+      default: return <DirectionsWalkIcon sx={iconStyle} />;
     }
   };
 
-  // Show loading state
+  const scrollToLocation = (itemId) => {
+    const element = document.getElementById(`location-card-${itemId}`);
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+      });
+    }
+  };
+
+  const handleOpenGoogleMaps = () => {
+    const validPlaces = relatedPlaces.filter(
+      (place) =>
+        place.location?.coordinates &&
+        Array.isArray(place.location.coordinates) &&
+        place.location.coordinates.length === 2
+    );
+
+    if (validPlaces.length === 0) return;
+
+    const coords = validPlaces.map(
+      (p) => `${p.location.coordinates[1]},${p.location.coordinates[0]}`
+    );
+
+    let url = "https://www.google.com/maps/dir/?api=1";
+
+    if (coords.length === 1) {
+      url += `&destination=${coords[0]}`;
+    } else {
+      const origin = coords[0];
+      const destination = coords[coords.length - 1];
+
+      if (coords.length > 2) {
+        const waypoints = coords.slice(1, -1).join('|');
+        url += `&origin=${origin}&destination=${destination}&waypoints=${waypoints}`;
+      } else {
+        url += `&origin=${origin}&destination=${destination}`;
+      }
+    }
+
+    window.open(url, '_blank');
+  };
+
+  // --- LẤY DANH SÁCH TỌA ĐỘ CHO POLYLINE ---
+  const polylinePositions = relatedPlaces
+    .filter(p => p.location?.coordinates?.length === 2)
+    .map(p => [p.location.coordinates[1], p.location.coordinates[0]]);
+  // ----------------------------------------
+
   if (loading) {
     return (
-      <Box
-        className="loading-container"
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-        }}
-      >
-        <CircularProgress sx={{ color: '#4A90E2' }} />
-      </Box>
+      <div className="flex justify-center items-center min-h-screen" style={{ backgroundColor: COLORS.bg }}>
+        <CircularProgress sx={{ color: 'black' }} />
+      </div>
     );
   }
 
-  // Show error state
   if (error || !scheduleData) {
     return (
-      <Box
-        className="schedule-detail-container"
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-        }}
-      >
-        <Paper className="elevated-card" sx={{ p: 4, textAlign: "center" }}>
-          <Typography variant="h6" color="error" gutterBottom fontWeight={700}>
-            {error || "スケジュールが見つかりません"}
-          </Typography>
-          <Button
-            className="btn-primary"
+      <div className="flex justify-center items-center min-h-screen" style={{ backgroundColor: COLORS.bg }}>
+        <div className="p-8 text-center bg-white border-2 border-black shadow-[4px_4px_0_0_#000] rounded-xl">
+          <h2 className="text-xl font-bold text-red-500 mb-4">{error || "スケジュールが見つかりません"}</h2>
+          <button
             onClick={() => navigate("/schedule")}
-            sx={{ mt: 2 }}
+            className="px-6 py-2 bg-[#5BC0EB] border-2 border-black font-bold shadow-[2px_2px_0_0_#000] active:translate-y-1 active:shadow-none transition-all rounded-lg"
           >
             戻る
-          </Button>
-        </Paper>
-      </Box>
+          </button>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Box className="detail-page-wrapper" sx={{ py: 3 }}>
-      <Box sx={{ maxWidth: 1400, mx: "auto", px: { xs: 2, md: 4 } }}>
-        {/* Header */}
-        <Paper className="header-section" sx={{ mb: 3 }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between">
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <IconButton 
-                onClick={() => navigate("/schedule")}
-                className="icon-btn-elevated"
-              >
-                <ArrowBackIcon />
-              </IconButton>
-              <Typography variant="h5" fontWeight={700} color="#2C3E50">
-                {scheduleData.title}
-              </Typography>
-            </Stack>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <IconButton
-                onClick={async () => {
-                  const userStr = getCookie('user');
-                  if (!userStr) {
-                    return navigate('/login');
-                  }
-                  const user = JSON.parse(userStr);
-                  try {
-                    if (liked) {
-                      await unlikeDayPlan(user._id, id);
-                      setLiked(false);
-                      setLikesCount((c) => Math.max(0, c - 1));
-                    } else {
-                      await likeDayPlan(user._id, id);
-                      setLiked(true);
-                      setLikesCount((c) => c + 1);
-                    }
-                  } catch (err) {
-                    console.error('Like toggle error', err);
-                  }
-                }}
-                className="icon-btn-elevated"
-                sx={{ color: liked ? "#FF6B9D" : "inherit" }}
-              >
-                {liked ? <FavoriteIcon /> : <FavoriteBorderIcon />}
-              </IconButton>
-              <Typography variant="body2" color="text.secondary" fontWeight={600}>{likesCount}</Typography>
-            </Stack>
-          </Stack>
-        </Paper>
+    <div className="min-h-screen py-6" style={{ backgroundColor: COLORS.bg, fontFamily: 'sans-serif' }}>
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
 
-        {/* Timeline Overview */}
-        <Paper className="timeline-overview" sx={{ mb: 3 }}>
-          <Stack
-            direction="row"
-            alignItems="flex-start" 
-            spacing={0}
-            sx={{
-              minWidth: "max-content",
-              position: "relative",
-              overflowX: "auto",
-              // --- SỬA LẠI: Trả về padding nhỏ gọn, không cần đệm cao nữa ---
-              pt: 2, // Giảm từ 8 xuống 2
-              pb: 2,
-              px: 2,
+        {/* === HEADER === */}
+        <div className="mb-8 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000]">
+          <div className="flex items-center gap-4 w-full md:w-auto">
+            <button
+              onClick={() => navigate("/schedule")}
+              className="w-12 h-12 flex items-center justify-center border-2 border-black rounded-full hover:bg-gray-100 shadow-[2px_2px_0_0_#000] transition-all"
+            >
+              <ArrowBackIcon />
+            </button>
+
+            <div className="flex-1 md:flex-none">
+              <h1 className="text-2xl md:text-3xl font-black uppercase tracking-tight">{scheduleData.title}</h1>
+              <div className="flex items-center gap-2 mt-1">
+                <Avatar src={scheduleData.user.avatar} sx={{ width: 24, height: 24, border: '1px solid black' }} />
+                <span className="font-bold text-sm text-gray-700">{scheduleData.user.name}</span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={async () => {
+              const userStr = getCookie('user');
+              if (!userStr) {
+                return navigate('/login');
+              }
+              const user = JSON.parse(userStr);
+              try {
+                if (liked) {
+                  await unlikeDayPlan(user._id, id);
+                  setLiked(false);
+                  setLikesCount((c) => Math.max(0, c - 1));
+                } else {
+                  await likeDayPlan(user._id, id);
+                  setLiked(true);
+                  setLikesCount((c) => c + 1);
+                }
+              } catch (err) {
+                console.error('Like toggle error', err);
+              }
             }}
+            className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] hover:bg-red-50 active:translate-y-1 active:shadow-none transition-all"
           >
+            {liked ? <FavoriteIcon sx={{ color: "#f44336" }} /> : <FavoriteBorderIcon />}
+            <span className="font-black text-lg">{likesCount}</span>
+          </button>
+        </div>
+
+        {/* === TIMELINE OVERVIEW === */}
+        <div className="mb-8 bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000] overflow-x-auto">
+          <div className="min-w-max flex items-center px-4 relative">
+            {/* START NODE */}
+            {scheduleData.timeline.length > 0 && (
+              <div className="flex items-center relative z-10">
+                <div className="flex flex-col items-center px-2 min-w-[120px]">
+                  <div className="w-14 h-14 rounded-full bg-[#4caf50] border-2 border-black flex items-center justify-center text-white shadow-[2px_2px_0_0_#000]">
+                    <HomeIcon sx={{ fontSize: 30 }} />
+                  </div>
+                  <span className="mt-2 text-xs font-black uppercase tracking-wider">出発</span>
+                </div>
+
+                {/* Arrow */}
+                <div className="flex items-center mx-4">
+                  <div className="w-10 h-10 rounded-full bg-[#E3F2FD] border-2 border-black flex items-center justify-center shadow-sm z-10">
+                    {getTransportIcon(scheduleData.timeline[0].transport)}
+                  </div>
+                  <div className="h-[2px] w-[80px] bg-black -ml-1"></div>
+                  <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+                </div>
+              </div>
+            )}
+
+            {/* LOCATION NODES */}
             {scheduleData.timeline.map((item, index) => (
-              <Box key={item.id} sx={{ position: "relative", display: "flex", alignItems: "flex-start" }}>
-                
-                {/* Location Item */}
-                <Stack alignItems="center" spacing={0.5} sx={{ minWidth: 120, px: 1, position: 'relative' }}>
-                  
-                  {/* --- SỬ DỤNG CUTE TOOLTIP --- */}
-                  {/* Nếu có note thì bọc Tooltip, không thì render Box thường */}
-                  {item.note ? (
-                    <CuteTooltip title={item.note} placement="top">
-                      <Box className="timeline-location-icon" sx={{ position: 'relative', zIndex: 2, cursor: 'pointer' }}>
-                        <LocationOnIcon sx={{ color: "#4A90E2", fontSize: 26 }} />
-                        {item.hasWarning && (
-                          <Box className="warning-badge">
-                            <WarningAmberIcon sx={{ fontSize: 16, color: "#fff" }} />
-                          </Box>
-                        )}
-                      </Box>
-                    </CuteTooltip>
-                  ) : (
-                    <Box className="timeline-location-icon" sx={{ position: 'relative', zIndex: 2 }}>
-                      <LocationOnIcon sx={{ color: "#4A90E2", fontSize: 26 }} />
+              <div key={item.id} className="flex items-center relative z-10">
+                {/* Node */}
+                <Tooltip title={item.note || ""} arrow placement="top">
+                  <div
+                    onClick={() => scrollToLocation(item.id)}
+                    className="flex flex-col items-center px-2 min-w-[120px] cursor-pointer group"
+                  >
+                    <div className="relative w-14 h-14 rounded-full bg-white border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000] group-hover:-translate-y-1 group-hover:bg-[#f0f7ff] transition-all">
+                      <LocationOnIcon sx={{ color: COLORS.blue, fontSize: 28 }} />
                       {item.hasWarning && (
-                        <Box className="warning-badge">
-                          <WarningAmberIcon sx={{ fontSize: 16, color: "#fff" }} />
-                        </Box>
+                        <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-[#FDE24F] border border-black rounded-full flex items-center justify-center">
+                          <WarningAmberIcon sx={{ fontSize: 12, color: "black" }} />
+                        </div>
                       )}
-                    </Box>
-                  )}
-                  {/* --- HẾT PHẦN TOOLTIP --- */}
+                    </div>
+                    <span className="mt-2 text-xs font-bold text-[#1976d2]">{item.startTime}{item.endTime ? ` - ${item.endTime}` : ''}</span>
+                    <span className="text-xs font-bold text-center max-w-[100px] truncate">{item.name}</span>
+                  </div>
+                </Tooltip>
 
-                  {/* Time */}
-                  <Typography variant="caption" fontWeight={700} sx={{ color: "#4A90E2", mt: 0.5 }}>
-                    {item.time}
-                  </Typography>
-
-                  {/* Name */}
-                  <Typography
-                    variant="caption"
-                    align="center"
-                    fontWeight={600}
-                    sx={{
-                      maxWidth: 100,
-                      fontSize: "0.7rem",
-                      lineHeight: 1.2,
-                      wordBreak: "break-word",
-                      color: "#2C3E50"
-                    }}
-                  >
-                    {item.name}
-                  </Typography>
-                </Stack>
-
-                {/* Transport Arrow (Giữ nguyên) */}
+                {/* Arrow to Next */}
                 {index < scheduleData.timeline.length - 1 && (
-                  <Stack alignItems="center" spacing={0.5} sx={{ mx: 2, mt: 1 }}>
-                    <Box className="transport-icon-circle">
+                  <div className="flex items-center mx-4">
+                    <div className="w-10 h-10 rounded-full bg-[#E3F2FD] border-2 border-black flex items-center justify-center shadow-sm z-10">
                       {getTransportIcon(scheduleData.timeline[index + 1].transport)}
-                    </Box>
-                    {scheduleData.timeline[index + 1].duration && (
-                      <Typography variant="caption" fontWeight={600} sx={{ fontSize: "0.65rem", color: "#2C3E50" }}>
-                        {scheduleData.timeline[index + 1].duration}
-                      </Typography>
-                    )}
-                    <Box className="timeline-arrow" sx={{ width: 80 }} />
-                  </Stack>
+                    </div>
+                    <div className="h-[2px] w-[80px] bg-black -ml-1"></div>
+                    <div className="w-0 h-0 border-t-[6px] border-t-transparent border-b-[6px] border-b-transparent border-l-[8px] border-l-black"></div>
+                  </div>
                 )}
-              </Box>
+              </div>
             ))}
-          </Stack>
-        </Paper>
+          </div>
+        </div>
 
-        {/* User info */}
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-          <Avatar src={scheduleData.user.avatar} className="avatar-elevated" sx={{ width: 48, height: 48 }} />
-          <Typography variant="subtitle1" fontWeight={700} color="#2C3E50">
-            {scheduleData.user.name}
-          </Typography>
-        </Stack>
-        
-        <Grid container spacing={4}>
-          {/* Timeline */}
-          <Grid item xs={12} md={9} sx={{ flex: 1 }}>
-            <Box>
-              {/* Timeline Items */}
-              {scheduleData.timeline.map((item, index) => (
-                <Box key={item.id} sx={{ position: "relative" }}>
-                  {/* Timeline line */}
-                  {index < scheduleData.timeline.length - 1 && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: { xs: 15, sm: 38 }, // Căn chỉnh lại cho khớp icon
-                        top: 180,
-                        bottom: 0,
-                        width: 3,
-                        background: 'linear-gradient(180deg, #4A90E2 0%, #FF6B9D 100%)',
-                        borderRadius: 2,
-                        zIndex: 0,
-                      }}
-                    />
-                  )}
+        {/* === MAIN CONTENT GRID === */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
 
-                  <Stack direction="row" spacing={2} sx={{ mb: 3 }}>
-                    {/* Time & Icon */}
-                    <Stack alignItems="center" sx={{ minWidth: 80 }}>
-                      <Typography variant="body2" fontWeight={700} sx={{ mb: 1, color: '#2C3E50' }}>
-                        {item.time}
-                      </Typography>
-                      <Box className="timeline-location-icon">
-                        <LocationOnIcon sx={{ color: "#4A90E2" }} />
-                      </Box>
-                      {item.transport && (
-                        <Box sx={{ mt: 2 }} className="transport-icon-circle">
-                          {getTransportIcon(item.transport)}
-                        </Box>
-                      )}
-                      {item.duration && (
-                        <Typography variant="caption" fontWeight={600} sx={{ mt: 0.5, color: '#2C3E50' }}>
-                          {item.duration}
-                        </Typography>
-                      )}
-                    </Stack>
+          {/* LEFT: VERTICAL TIMELINE */}
+          <div className="md:col-span-8">
+            {scheduleData.timeline.map((item, index) => (
+              <div key={item.id} className="relative flex mb-8">
 
-                    {/* Content */}
-                    <Box sx={{ flex: 1 }}>
-                      <TimelineCard
-                        location={item}
-                        onToggleDescription={handleToggleDescription}
-                        onToggleNote={handleToggleNote}
-                        expandedDesc={expandedDesc[item.id]}
-                        expandedNote={expandedNote[item.id]}
-                        navigate={navigate}
-                      />
-                    </Box>
-                  </Stack>
-                </Box>
-              ))}
-            </Box>
-          </Grid>
-          
-          {/* Cột phải - Thông tin & Bản đồ */}
-          <Grid item xs={12} md={3}>
-            <Stack spacing={3}>
-              {/* Tổng quan */}
-              <Paper className="overview-panel">
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
-                  概要
-                </Typography>
-                <Stack spacing={2}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <AttachMoneyIcon sx={{ color: '#4A90E2' }} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {scheduleData.overview.price}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <GroupIcon sx={{ color: '#FF6B9D' }} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {scheduleData.overview.age}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <AccessTimeIcon sx={{ color: '#4A90E2' }} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {scheduleData.overview.time}
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <LocationOnIcon sx={{ color: '#FF6B9D' }} />
-                    <Typography variant="body2" fontWeight={600}>
-                      {scheduleData.overview.locations}場所
-                    </Typography>
-                  </Stack>
-                  {scheduleData.overview.note && (
-                    <>
-                      <Box className="styled-divider" />
-                      <Stack direction="row" spacing={1} alignItems="flex-start">
-                        <WarningAmberIcon sx={{ color: '#FFB84D', mt: 0.3 }} fontSize="small" />
-                        <Typography variant="body2" fontWeight={600}>
-                          {scheduleData.overview.note}
-                        </Typography>
-                      </Stack>
-                    </>
-                  )}
-                </Stack>
-              </Paper>
+                {/* 1. LINE */}
+                {index < scheduleData.timeline.length - 1 && (
+                  <div className="absolute left-10 -translate-x-1/2 top-[60px] bottom-[-32px] w-[2px] bg-black z-0"></div>
+                )}
 
-              {/* Danh sách chú ý */}
-              {scheduleData.warnings.length > 0 && (
-                <Paper className="overview-panel">
-                  <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
-                    注意
-                  </Typography>
-                  <Stack spacing={1.5}>
-                    {scheduleData.warnings.map((warning, index) => (
-                      <Box key={index} className="warning-card" sx={{ p: 1.5 }}>
-                        <Stack direction="row" spacing={1} alignItems="flex-start">
-                          <WarningAmberIcon sx={{ color: '#FFB84D' }} fontSize="small" />
-                          <Box>
-                            <Typography variant="body2" fontWeight={700} color="#2C3E50">
-                              {warning.location}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {warning.note}
-                            </Typography>
-                          </Box>
-                        </Stack>
-                      </Box>
-                    ))}
-                  </Stack>
-                </Paper>
+                {/* 2. LEFT COLUMN (Time & Icon) */}
+                <div className="flex flex-col items-center min-w-[80px] relative z-10">
+                  <span className="text-sm font-black mb-2">{item.time}</span>
+
+                  <div className="w-10 h-10 rounded-full bg-white border-2 border-black flex items-center justify-center shadow-[2px_2px_0_0_#000]">
+                    <LocationOnIcon sx={{ color: COLORS.blue }} />
+                  </div>
+                </div>
+
+                {/* 3. MIDDLE ICON (Transport) */}
+                {index < scheduleData.timeline.length - 1 && (
+                  <div className="absolute top-[55%] left-10 -translate-x-1/2 -translate-y-1/2 w-8 h-8 bg-white border-2 border-black rounded-full flex items-center justify-center z-20 shadow-sm">
+                    {React.cloneElement(getTransportIcon(scheduleData.timeline[index + 1].transport), { sx: { fontSize: 16 } })}
+                  </div>
+                )}
+
+                {/* 4. RIGHT CONTENT (Card) */}
+                <div className="flex-1 pl-4">
+                  <TimelineCard
+                    location={item}
+                    navigate={navigate}
+                    containerId={`location-card-${item.id}`}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* RIGHT: SIDEBAR */}
+          <div className="md:col-span-4 flex flex-col gap-6">
+
+            {/* OVERVIEW BOX */}
+            <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+              <h3 className="text-lg font-black mb-3">基本情報</h3>
+              <div className="border-t-2 border-black mb-3"></div>
+
+              <div className="space-y-3">
+                {/* Price */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
+                    <AttachMoneyIcon sx={{ fontSize: 20, color: 'black' }} />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-600 font-bold">料金</div>
+                    <div className="font-bold">{scheduleData.overview.price}</div>
+                  </div>
+                </div>
+
+                {/* Time */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.blue }}>
+                    <AccessTimeIcon sx={{ fontSize: 20, color: 'black' }} />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-600 font-bold">営業時間</div>
+                    <div className="font-bold">{scheduleData.overview.time}</div>
+                  </div>
+                </div>
+
+                {/* Age */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.yellow }}>
+                    <GroupIcon sx={{ fontSize: 20, color: 'black' }} />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-600 font-bold">対象年齢</div>
+                    <div className="font-bold">{scheduleData.overview.age}</div>
+                  </div>
+                </div>
+
+                {/* Locations */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
+                    <LocationOnIcon sx={{ fontSize: 20, color: 'black' }} />
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-600 font-bold">場所</div>
+                    <div className="font-bold">{scheduleData.overview.locations} 箇所</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Note */}
+              {scheduleData.overview.note && (
+                <>
+                  <div className="border-t-2 border-black my-3"></div>
+                  <div className="flex gap-2 items-start text-sm bg-gray-50 p-2 rounded border border-gray-200">
+                    <MenuBookIcon sx={{ fontSize: 20 }} className="mt-0.5 flex-shrink-0 text-gray-600" />
+                    <span className="text-gray-700">{scheduleData.overview.note}</span>
+                  </div>
+                </>
               )}
+            </div>
 
-              {/* Bản đồ */}
-              <Paper className="overview-panel">
-                <Typography variant="h6" fontWeight={700} sx={{ mb: 2, color: '#2C3E50' }}>
-                  地図
-                </Typography>
-                <Box className="map-container" sx={{ height: 300 }}>
-                  {relatedPlaces.length > 0 ? (
-                    <MapContainer
-                      center={mapCenter}
-                      zoom={mapZoom}
-                      scrollWheelZoom={false}
-                      style={{ height: '100%', width: '100%' }}
-                    >
-                      <TileLayer
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      />
-                      {relatedPlaces
-                        .filter(place => 
-                          place.location?.coordinates && 
-                          Array.isArray(place.location.coordinates) && 
-                          place.location.coordinates.length === 2
-                        )
-                        .map((place, index) => (
-                          <Marker
-                            key={place.id}
-                            position={[
-                              place.location.coordinates[1], // latitude
-                              place.location.coordinates[0]  // longitude
-                            ]}
-                          >
-                            <Popup>
-                              <Box sx={{ minWidth: 150 }}>
-                                <Typography variant="subtitle2" fontWeight={700}>
-                                  {place.name}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {place.category}
-                                </Typography>
-                              </Box>
-                            </Popup>
-                          </Marker>
-                        ))
-                      }
-                    </MapContainer>
-                  ) : (
-                    <Box
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                        bgcolor: "#e0e0e0",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
-                    >
-                      <Typography color="text.secondary" fontWeight={600}>地図データがありません</Typography>
-                    </Box>
-                  )}
-                </Box>
-              </Paper>
-            </Stack>
-          </Grid>
-        </Grid>
+            {/* WARNINGS BOX */}
+            <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+              <h3 className="text-lg font-black mb-3 flex items-center gap-2">
+                <WarningAmberIcon sx={{ color: '#ed6c02' }} /> 注意
+              </h3>
+              <div className="space-y-3">
+                {scheduleData.warnings.map((warning, index) => (
+                  <div key={index} className="bg-[#FFF3E0] border border-[#ED6C02] rounded-lg p-3">
+                    <div className="font-black text-sm text-[#E65100]">{warning.location}</div>
+                    <div className="text-xs text-[#E65100] mt-1">{warning.note}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
 
-        {/* Related Places Section */}
-        {relatedPlaces.length > 0 && (
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 3, color: '#2C3E50' }}>
-              関連する場所
-            </Typography>
-            <Grid container spacing={3}>
-              {relatedPlaces.map((place) => (
-                <Grid item xs={12} sm={6} md={3} key={place.id}>
-                  <Card 
-                    className="related-place-card"
-                    sx={{ cursor: 'pointer' }}
-                    onClick={() => navigate(`/places/${place.id}`)}
+            {/* MAP BOX */}
+            <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+              <h3 className="text-lg font-black mb-3">地図</h3>
+              <div className="w-full h-[300px] rounded-lg border-2 border-black overflow-hidden relative z-0 mb-3">
+                {relatedPlaces.length > 0 ? (
+                  <MapContainer
+                    center={mapCenter}
+                    zoom={mapZoom}
+                    scrollWheelZoom={true}
+                    style={{ height: '100%', width: '100%' }}
                   >
-                    <CardMedia
-                      component="img"
-                      height="180"
-                      image={place.image}
-                      alt={place.name}
-                      sx={{ objectFit: "cover" }}
+                    <TileLayer
+                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    <CardContent>
-                      <Chip 
-                        label={place.category} 
-                        size="small" 
-                        className="chip-elevated-pink"
-                        sx={{ mb: 1 }}
+
+                    {/* VẼ ĐƯỜNG NỐI (POLYLINE) */}
+                    {polylinePositions.length > 1 && (
+                      <Polyline
+                        positions={polylinePositions}
+                        pathOptions={{ color: 'black', weight: 4, dashArray: '10, 10' }}
                       />
-                      <Typography variant="h6" fontWeight={700} noWrap color="#2C3E50">
-                        {place.name}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
+                    )}
+
+                    {relatedPlaces
+                      .filter(place =>
+                        place.location?.coordinates &&
+                        Array.isArray(place.location.coordinates) &&
+                        place.location.coordinates.length === 2
+                      )
+                      .map((place, index, array) => (
+                        <Marker
+                          key={place.id}
+                          position={[
+                            place.location.coordinates[1],
+                            place.location.coordinates[0]
+                          ]}
+                          // Logic: Nếu là điểm cuối thì dùng redIcon, còn lại dùng defaultIcon
+                          icon={index === array.length - 1 ? redIcon : defaultIcon}
+                        >
+                          <Popup>
+                            <div className="min-w-[120px]">
+                              <div className="font-bold text-sm text-[#5BC0EB]">#{index + 1}</div>
+                              <div className="font-bold text-sm">{place.name}</div>
+                              <div className="text-xs text-gray-500">{place.category}</div>
+                            </div>
+                          </Popup>
+                        </Marker>
+                      ))
+                    }
+                  </MapContainer>
+                ) : (
+                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500 font-bold">
+                    地図データがありません
+                  </div>
+                )}
+              </div>
+
+              {/* GOOGLE MAPS BUTTON */}
+              {relatedPlaces.some(p => p.location?.coordinates) && (
+                <button
+                  onClick={handleOpenGoogleMaps}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all group"
+                  style={{ backgroundColor: COLORS.pink }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.blue}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = COLORS.pink}
+                >
+                  <NavigationIcon sx={{ fontSize: 20 }} />
+                  <span>行き方</span>
+                </button>
+              )}
+            </div>
+
+          </div>
+        </div>
+
+        {/* === RELATED PLACES === */}
+        {relatedPlaces.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-black mb-6 uppercase flex items-center gap-2">
+              <span className="w-4 h-8 bg-[#FF90E8] border-2 border-black inline-block -skew-x-12"></span>
+              関連する場所
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
+              {relatedPlaces.map((place) => (
+                <div
+                  key={place.id}
+                  onClick={() => navigate(`/places/${place.id}`)}
+                  className="bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000] hover:-translate-y-1 hover:shadow-[6px_6px_0_0_#000] transition-all cursor-pointer group"
+                >
+                  <div className="h-48 border-b-2 border-black relative">
+                    <img
+                      src={place.image}
+                      alt={place.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 left-2 bg-white border-2 border-black px-2 py-0.5 text-xs font-bold rounded shadow-sm">
+                      {place.category}
+                    </div>
+                  </div>
+                  <div className="p-4">
+                    <h4 className="font-bold text-lg truncate group-hover:text-[#5BC0EB] transition-colors">{place.name}</h4>
+                  </div>
+                </div>
               ))}
-            </Grid>
-          </Box>
+            </div>
+          </div>
         )}
-      </Box>
-    </Box>
+
+      </div>
+    </div>
   );
 }
 
