@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+app.enable('trust proxy');
 const database = require("./config/database.js");
 const bodyParser = require("body-parser");
 const cors = require("cors");
