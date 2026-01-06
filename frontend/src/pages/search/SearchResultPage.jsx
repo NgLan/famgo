@@ -9,7 +9,7 @@ import SearchInputSidebar from '../../components/filter-sidebar/SearchInputSideb
 import PaginationControl from '../../components/common/PaginationControl';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 
-const API_URL = import.meta.env.VITE_API_URL; 
+const BASE_API_URL = import.meta.env.VITE_API_URL; 
 
 const SearchResultPage = () => {
     const [searchParams] = useSearchParams();
@@ -56,7 +56,7 @@ const SearchResultPage = () => {
                 setTempFilterState(params);
 
                 // BƯỚC 3: Chuẩn bị gọi API
-                const API_URL = `${API_URL}/api/places/search`;
+                const API_URL = `${BASE_API_URL}/api/places/search`;
                 const apiQueryParams = new URLSearchParams();
 
                 // Duyệt qua params vừa đọc được để append vào API query
