@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Star, TrendingUp } from 'lucide-react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const COLORS = {
     pink: '#FF90E8',
     blue: '#5BC0EB',
@@ -38,7 +40,7 @@ const ReviewStatsSection = ({ placeId, refreshTrigger }) => {
         try {
             setLoading(true);
             const response = await axios.get(
-                `http://localhost:3000/api/reviews/stats/${placeId}`,
+                `${API_URL}/api/reviews/stats/${placeId}`,
                 { withCredentials: true }
             );
             setStats(response.data.data);

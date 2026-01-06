@@ -764,8 +764,10 @@ import axios from "axios";
 import TimelineCard from "../../components/location-card";
 import { getCookie } from '../../helpers/cookies.helper';
 import { likeDayPlan, unlikeDayPlan, checkLikeDayPlan } from '../../services/favorite.services';
+import { styled } from '@mui/material/styles';
 
-const API_BASE_URL = "http://localhost:3000/api";
+const API_URL = import.meta.env.VITE_API_URL; 
+const API_BASE_URL = `${API_URL}/api`;
 
 // Config Colors
 const COLORS = {

@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const FilterSidebar = ({ tempFilterState, setTempFilterState, onApply, onReset }) => {
   const [categories, setCategories] = useState([]);
   const [amenities, setAmenities] = useState([]);
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/places/filters')
+    axios.get(`${API_URL}/api/places/filters`)
       .then(res => {
         setCategories(res.data.data.categories || []);
         setAmenities(res.data.data.amenities || []);

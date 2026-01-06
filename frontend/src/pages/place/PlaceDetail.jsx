@@ -24,6 +24,8 @@ import ReviewDialog from "../../components/reviews/ReviewDialog";
 import ReviewStatsSection from "../../components/reviews/ReviewStatsSection";
 import { toast } from "react-toastify";
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const COLORS = {
   bg: '#FFFBF5',
   pink: '#FF90E8',
@@ -50,7 +52,7 @@ const PlaceDetail = () => {
       setError(null);
       try {
         const detailResponse = await axios.get(
-          `http://localhost:3000/api/places/${id}`
+          `${API_URL}/api/places/${id}`
         );
         const respData = detailResponse.data;
         const place = respData?.data || respData;
@@ -116,7 +118,7 @@ const PlaceDetail = () => {
   const fetchReviews = async () => {
     try {
       await axios.get(
-        `http://localhost:3000/api/reviews/place/${id}?limit=2`
+        `${API_URL}/api/reviews/place/${id}?limit=2`
       );
       // Refresh stats box khi review được submit/update
       setRefreshStatsKey((prev) => prev + 1);

@@ -1,4 +1,5 @@
-const API_DOMAIN = "http://localhost:3000/api/";
+const API_URL = import.meta.env.VITE_API_URL; 
+const API_DOMAIN = `${API_URL}/api/`;
 export const get = async (path) => {
   const response = await fetch(API_DOMAIN + path);
   const result = await response.json();
