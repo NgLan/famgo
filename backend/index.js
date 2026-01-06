@@ -13,7 +13,10 @@ const port = process.env.PORT || 3000;
 // SỬA LẠI: Cấu hình CORS với origin cụ thể và credentials
 app.use(
   cors({
-    origin: "http://localhost:5173", // Frontend URL - thay * bằng URL cụ thể
+    origin: [
+      "http://localhost:5173", // Frontend URL - thay * bằng URL cụ thể
+      "https://famgo.vercel.app"
+    ],
     credentials: true, // Cho phép gửi cookies
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
@@ -25,6 +28,7 @@ app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use(cors(corsOptions));
 
 app.get("/", (req, res) => {
   res.send("Hello World!");

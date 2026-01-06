@@ -22,6 +22,8 @@ import {
   Banknote
 } from 'lucide-react';
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 const CLOUDINARY_UPLOAD_PRESET = 'itss1_upload'; // Thay bằng preset của bạn
 const CLOUDINARY_CLOUD_NAME = 'dxudvl25z'; // Thay bằng cloud name của bạn
 
@@ -94,7 +96,7 @@ const ScheduleCreate = () => {
 
     try {
       const response = await fetch(
-        `http://localhost:3000/api/places/search?keyword=${encodeURIComponent(keyword)}`
+        `${API_URL}/api/places/search?keyword=${encodeURIComponent(keyword)}`
       );
 
       if (!response.ok) {
@@ -361,7 +363,7 @@ const ScheduleCreate = () => {
       console.log('Submitting:', dayPlanData);
 
       // Call API
-      const response = await fetch('http://localhost:3000/api/day-plans', {
+      const response = await fetch(`${API_URL}/api/day-plans`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -28,6 +28,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 
+const API_URL = import.meta.env.VITE_API_URL; 
+
 export default function Schedule() {
   // const plans = useMemo(() => mockPlans.slice(0, 6), []);
   const [plansData, setPlansData] = useState([]);
@@ -72,7 +74,7 @@ export default function Schedule() {
         if (appliedFilters.age_min !== null) params.age_min = appliedFilters.age_min;
         if (appliedFilters.age_max !== null) params.age_max = appliedFilters.age_max;
 
-        const response = await axios.get("http://localhost:3000/api/day-plans", {
+        const response = await axios.get(`${API_URL}/api/day-plans`, {
           params
         });
         setPlansData(response.data?.data ?? []);
