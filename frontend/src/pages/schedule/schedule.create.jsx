@@ -470,7 +470,7 @@ const ScheduleCreate = () => {
                       />
                       {item.startTime && (
                         <span className="time-period">
-                          {parseInt(item.startTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                          {parseInt(item.startTime.split(':')[0]) >= 12 ? '午後' : '午前'}
                         </span>
                       )}
                     </div>
@@ -486,7 +486,7 @@ const ScheduleCreate = () => {
                       />
                       {item.endTime && (
                         <span className="time-period">
-                          {parseInt(item.endTime.split(':')[0]) >= 12 ? 'PM' : 'AM'}
+                          {parseInt(item.endTime.split(':')[0]) >= 12 ? '午後' : '午前'}
                         </span>
                       )}
                     </div>
