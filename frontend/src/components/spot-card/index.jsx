@@ -100,7 +100,7 @@ const SpotCard = ({ spot, isFavorite: isFavoriteProp, onToggleFavorite }) => {
         </h3>
 
         <div className="flex items-center justify-between text-xs font-bold text-gray-500 mb-3">
-          <span className="bg-green-100 px-2 py-1 rounded border border-green-300 text-black flex items-center gap-1 text-base">
+          <span className="bg-green-100 px-2 py-1 rounded border border-green-300 text-black flex items-center gap-1 text-sm">
             <Banknote size={16} className="text-green-700"/> 
             {spot.price_range || 'Contact'}
           </span>
