@@ -155,9 +155,9 @@ export default function Schedule() {
 
     switch (priceRange) {
       case "free": price_min = 0; price_max = 0; break;
-      case "0-150k": price_min = 0; price_max = 15000; break;
+      case "0-150k": price_min = 0; price_max = 150000; break;
       case "150k-600k": price_min = 150000; price_max = 600000; break;
-      case "250k-1m": price_min = 250000; price_max = 1000000; break;
+      case "600k-1m": price_min = 600000; price_max = 1000000; break;
       case "1m+": price_min = 1000000; price_max = null; break;
       default: break;
     }
@@ -460,25 +460,25 @@ export default function Schedule() {
                         value="0-150k"
                         currentValue={priceRange}
                         onChange={setPriceRange}
-                        label="0円 - 1,000円"
+                        label="0万 - 15万VND未満"
                       />
                       <RadioOption
                         value="150k-600k"
                         currentValue={priceRange}
                         onChange={setPriceRange}
-                        label="1,000円 - 4,000円"
+                        label="15万 – 60万VND"
                       />
                       <RadioOption
-                        value="250k-1m"
+                        value="600k-1m"
                         currentValue={priceRange}
                         onChange={setPriceRange}
-                        label="1,500円 - 6,000円"
+                        label="60万 – 100万VND"
                       />
                       <RadioOption
                         value="1m+"
                         currentValue={priceRange}
                         onChange={setPriceRange}
-                        label="6,000円以上"
+                        label="100万VND以上"
                       />
                     </div>
                   </div>

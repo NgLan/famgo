@@ -7,7 +7,6 @@ import {
   Search,
   Banknote,
 } from "lucide-react";
-// 1. Thêm import useLocation
 import { useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 
@@ -17,13 +16,13 @@ import { getCookie } from "../../helpers/cookies.helper";
 import {
   addFavoritePlace,
   removeFavoritePlace,
+  checkFavoritePlace, // ⭐ Thêm import này
 } from "../../services/favorite.services";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const RankingPage = () => {
   const navigate = useNavigate();
-  // 2. Khởi tạo location để biết mình đang đứng ở đâu
   const location = useLocation();
   
   const [places, setPlaces] = useState([]);
@@ -34,6 +33,56 @@ const RankingPage = () => {
   const [filterState, setFilterState] = useState({});
   const [tempFilterState, setTempFilterState] = useState({});
   const [searchKeyword, setSearchKeyword] = useState("");
+
+  // ⭐ useEffect mới để load favorites
+  useEffect(() => {
+    let mounted = true;
+    const userStr = getCookie('user');
+    
+    if (!userStr || places.length === 0) {
+      // Nếu chưa login hoặc chưa có places thì reset favorites
+      setFavorites(new Set());
+      return;
+    }
+
+    try {
+      const user = JSON.parse(userStr);
+      
+      // Check từng place xem có favorite không
+      (async () => {
+        try {
+          const favoriteChecks = await Promise.all(
+            places.map(place => 
+              checkFavoritePlace(user._id, place._id)
+                .then(res => ({
+                  placeId: place._id,
+                  isFavorite: !!res?.data?.is_favorite
+                }))
+                .catch(() => ({
+                  placeId: place._id,
+                  isFavorite: false
+                }))
+            )
+          );
+
+          if (mounted) {
+            const newFavorites = new Set(
+              favoriteChecks
+                .filter(item => item.isFavorite)
+                .map(item => item.placeId)
+            );
+            setFavorites(newFavorites);
+          }
+        } catch (err) {
+          console.error('Error checking favorites:', err);
+        }
+      })();
+    } catch (e) {
+      console.error('Error parsing user:', e);
+    }
+
+    return () => { mounted = false };
+  }, [places]); // ⭐ Dependency: khi places thay đổi thì check lại favorites
 
   useEffect(() => {
     const fetchRanking = async () => {
@@ -70,11 +119,16 @@ const RankingPage = () => {
   const toggleFavorite = async (placeId) => {
     const userStr = getCookie("user");
     
-    // 3. Sửa logic check login: Chuyển hướng kèm state location
     if (!userStr) {
       toast.info("この機能を使用するにはログインが必要です。");
-      // state: { from: location } giúp trang Login biết phải quay lại đây
-      navigate("/login", { state: { from: location } });
+      navigate('/login', { 
+        state: { 
+          from: {
+            pathname: location.pathname,
+            search: location.search
+          }
+        } 
+      });
       return;
     }
 
@@ -98,10 +152,7 @@ const RankingPage = () => {
     }
   };
 
-  // ... (Phần còn lại của code giữ nguyên: getSpotImageUrl, getRankBadgeStyle, handleSearch...)
-  // Để tiết kiệm không gian tôi chỉ hiển thị phần thay đổi logic ở trên.
-  // Các phần render return bên dưới giữ nguyên.
-  
+  // ... phần còn lại giữ nguyên
   const getSpotImageUrl = (place) => {
     if (place.images?.length > 0) {
       const firstImage = place.images[0];
