@@ -1,3 +1,15 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.badge {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold border;
+}
+
+.badge-green {
+  @apply bg-[#E8F5E9] border-[#4CAF50] text-[#2E7D32];
+}
+
+.badge-orange {
+  @apply bg-[#FFF3E0] border-[#FF9800] text-[#EF6C00];
+}

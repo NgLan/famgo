@@ -984,9 +984,9 @@ function ScheduleDetail() {
   const formatPriceRange = (priceRange) => {
     if (!priceRange || (!priceRange.min && !priceRange.max)) return "無料";
     if (priceRange.min === priceRange.max || !priceRange.max) {
-      return `${priceRange.min.toLocaleString()}đ`;
+      return `${priceRange.min.toLocaleString()}円`;
     }
-    return `${priceRange.min.toLocaleString()}đ - ${priceRange.max.toLocaleString()}đ`;
+    return `${priceRange.min.toLocaleString()}円 - ${priceRange.max.toLocaleString()}円`;
   };
 
   const calculateTotalPriceRange = (items) => {
@@ -1000,8 +1000,8 @@ function ScheduleDetail() {
       }
     });
     if (totalMin === 0 && totalMax === 0) return "無料";
-    if (totalMin === totalMax) return `${totalMin.toLocaleString()}đ`;
-    return `${totalMin.toLocaleString()}đ - ${totalMax.toLocaleString()}đ`;
+    if (totalMin === totalMax) return `${totalMin.toLocaleString()}円`;
+    return `${totalMin.toLocaleString()}円 - ${totalMax.toLocaleString()}円`;
   };
 
   const getTimeRange = (items) => {
@@ -1018,7 +1018,12 @@ function ScheduleDetail() {
       "Xe máy": "bike",
       "Đi bộ": "walk",
       "Xe bus": "bus",
-      "Xe đạp": "bike"
+      "Xe đạp": "bike",
+      "車": "car",
+      "バイク": "bike",
+      "徒歩": "walk",
+      "バス": "bus",
+      "自転車": "bike"
     };
     return transportMap[transport] || "walk";
   };
