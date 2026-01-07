@@ -1,36 +1,74 @@
-import { AppBar, Toolbar, Stack, IconButton, Button, Box, InputBase, Typography } from '@mui/material'
-import HomeRoundedIcon from '@mui/icons-material/HomeRounded'
-import SearchIcon from '@mui/icons-material/Search'
-import NotificationsIcon from '@mui/icons-material/Notifications'
-import AccountCircleIcon from '@mui/icons-material/AccountCircle'
-import { useNavigate, Link } from 'react-router-dom'
+import {
+  AppBar,
+  Toolbar,
+  Stack,
+  IconButton,
+  Button,
+  Box,
+  InputBase,
+  Typography,
+  Menu,
+  MenuItem,
+  ListItemIcon,
+  Divider
+} from '@mui/material';
+import HomeRoundedIcon from '@mui/icons-material/HomeRounded';
+import SearchIcon from '@mui/icons-material/Search';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import Logout from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
+import { useNavigate, Link } from 'react-router-dom';
 import { useState } from 'react';
-import { getCookie } from '../../helpers/cookies.helper';
+import { getCookie, deleteCookie } from '../../helpers/cookies.helper'; // Thêm deleteCookie
 
 const Header = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [logoLoadFailed, setLogoLoadFailed] = useState(false);
+  
+  // State cho Menu Dropdown
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
   const token = getCookie('token');
   const fullName = getCookie('fullName');
 
-  const handleProfileClick = () => {
+  // Mở menu khi click avatar
+  const handleProfileClick = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  // Đóng menu
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  // Xử lý khi chọn "Trang cá nhân"
+  const handleGoToProfile = () => {
+    handleClose();
     navigate('/profile');
   };
 
+  // Xử lý Logout từ Header -> Về trang chủ
+  const handleLogout = () => {
+    handleClose();
+    deleteCookie('token');
+    deleteCookie('fullName');
+    deleteCookie('user');
+    navigate('/'); // Chuyển về Home
+    window.location.reload(); // Reload để cập nhật lại Header (ẩn avatar đi)
+  };
 
-  // 検索フォームが送信されたときの処理
   const handleSearch = (e) => {
     e.preventDefault();
-
     if (searchTerm.trim()) {
       navigate(`/search?keyword=${searchTerm.trim()}`);
-      console.log("Searching for:", `/search?keyword=${searchTerm.trim()}`);
-
     } else {
       navigate('/search');
     }
   };
+
   return (
     <AppBar
       position="sticky"
@@ -86,10 +124,8 @@ const Header = () => {
             )}
           </Box>
 
-          {/* Divider */}
           <Box sx={{ width: 2, height: 36, backgroundColor: '#000' }} />
 
-          {/* Home */}
           <IconButton
             component={Link}
             to="/"
@@ -112,7 +148,6 @@ const Header = () => {
             <HomeRoundedIcon fontSize="small" />
           </IconButton>
 
-          {/* Navigation */}
           <Stack direction="row" spacing={2} alignItems="center" sx={{ ml: 1 }}>
             <Button
               component={Link}
@@ -145,7 +180,7 @@ const Header = () => {
           </Stack>
         </Stack>
 
-        {/* Center search box grows */}
+        {/* Center search box */}
         <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', minWidth: 0 }}>
           <Box
             component="form"
@@ -177,8 +212,12 @@ const Header = () => {
         {/* Auth buttons or User Menu */}
         {token ? (
           <Stack direction="row" spacing={1} alignItems="center" sx={{ flexShrink: 0 }}>
+            {/* User Info Box (Desktop) - Click to open Menu */}
             <Box
-              onClick={handleProfileClick}
+              onClick={handleProfileClick} // Mở menu
+              aria-controls={open ? 'account-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? 'true' : undefined}
               sx={{
                 display: { xs: 'none', sm: 'flex' },
                 alignItems: 'center',
@@ -215,30 +254,13 @@ const Header = () => {
               <AccountCircleIcon sx={{ color: '#000' }} />
             </Box>
 
-            <IconButton
-              size="small"
-              sx={{
-                width: 44,
-                height: 44,
-                border: '2px solid #000',
-                borderRadius: 2,
-                color: '#000',
-                backgroundColor: '#fff',
-                boxShadow: '2px 2px 0 #000',
-                '&:hover': {
-                  backgroundColor: '#fff',
-                  transform: 'translate(-1px, -1px)',
-                  boxShadow: '3px 3px 0 #000',
-                },
-                transition: 'transform 120ms ease, box-shadow 120ms ease',
-              }}
-            >
-              <NotificationsIcon fontSize="small" />
-            </IconButton>
-
+            {/* Mobile Account Icon - Click to open Menu */}
             <IconButton
               onClick={handleProfileClick}
               size="small"
+              aria-controls={open ? 'account-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={open ? 'true' : undefined}
               sx={{
                 display: { xs: 'inline-flex', sm: 'none' },
                 width: 44,
@@ -258,6 +280,63 @@ const Header = () => {
             >
               <AccountCircleIcon fontSize="small" />
             </IconButton>
+
+            {/* Dropdown Menu */}
+            <Menu
+              anchorEl={anchorEl}
+              id="account-menu"
+              open={open}
+              onClose={handleClose}
+              onClick={handleClose}
+              PaperProps={{
+                elevation: 0,
+                sx: {
+                  overflow: 'visible',
+                  filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
+                  mt: 1.5,
+                  border: '2px solid #000',
+                  boxShadow: '4px 4px 0 #000', // Style Neo Brutalism
+                  borderRadius: 2,
+                  '& .MuiAvatar-root': {
+                    width: 32,
+                    height: 32,
+                    ml: -0.5,
+                    mr: 1,
+                  },
+                  '&:before': {
+                    content: '""',
+                    display: 'block',
+                    position: 'absolute',
+                    top: 0,
+                    right: 14,
+                    width: 10,
+                    height: 10,
+                    bgcolor: 'background.paper',
+                    transform: 'translateY(-50%) rotate(45deg)',
+                    zIndex: 0,
+                    borderTop: '2px solid #000',
+                    borderLeft: '2px solid #000',
+                  },
+                },
+              }}
+              transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+              anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+            >
+              <MenuItem onClick={handleGoToProfile} sx={{ fontWeight: 'bold' }}>
+                <ListItemIcon>
+                  <PersonIcon fontSize="small" sx={{ color: '#000' }} />
+                </ListItemIcon>
+                マイページ
+              </MenuItem>
+              <Divider sx={{ my: 0.5, borderColor: '#000' }} />
+              <MenuItem onClick={handleLogout} sx={{ fontWeight: 'bold', color: '#d32f2f' }}>
+                <ListItemIcon>
+                  <Logout fontSize="small" sx={{ color: '#d32f2f' }} />
+                </ListItemIcon>
+                ログアウト
+              </MenuItem>
+            </Menu>
+
           </Stack>
         ) : (
           <Stack direction="row" spacing={1.25} alignItems="center" sx={{ flexShrink: 0 }}>
@@ -317,4 +396,4 @@ const Header = () => {
   )
 }
 
-export default Header
+export default Header;

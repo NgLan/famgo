@@ -6,23 +6,27 @@ import {
   Search,
   Filter,
   ChevronDown,
-  ChevronLeft,
-  ChevronRight,
   Users,
   StickyNote,
   Banknote,
+  Baby // Icon mới cho phần độ tuổi
 } from "lucide-react";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
 import { getCookie } from "../../helpers/cookies.helper";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import { Link } from "react-router-dom";
+// 1. Import thêm useLocation và toast
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
+
 import {
   likeDayPlan,
   unlikeDayPlan,
   checkLikeDayPlan,
 } from "../../services/favorite.services";
+
+// 2. Import PaginationControl
+import PaginationControl from "../../components/common/PaginationControl";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -32,7 +36,10 @@ export default function Schedule() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [likedPlans, setLikedPlans] = useState({});
+  
   const navigate = useNavigate();
+  // 3. Khởi tạo location
+  const location = useLocation();
 
   // Filter states
   const [searchText, setSearchText] = useState("");
@@ -57,7 +64,7 @@ export default function Schedule() {
       try {
         setLoading(true);
         const response = await axios.get(`${API_URL}/api/day-plans`, {
-          params: { page },
+          params: { page, ...appliedFilters }, // Spread appliedFilters vào params nếu backend hỗ trợ nhận trực tiếp, hoặc map lại như logic cũ của bạn
         });
 
         const plans = response.data?.data ?? [];
@@ -85,23 +92,30 @@ export default function Schedule() {
         }
       } catch (err) {
         console.error(err);
+        toast.error("データの取得中にエラーが発生しました");
       } finally {
         setLoading(false);
       }
     };
 
     fetchDayPlans();
+    // Scroll to top khi page hoặc filter thay đổi
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, [page, appliedFilters]);
 
   const handlePageChange = (newPage) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // window.scrollTo đã được xử lý trong useEffect
   };
 
+  // 4. Cập nhật logic Like/Unlike
   const handleToggleLike = async (planId) => {
     const userStr = getCookie("user");
+    
+    // Nếu chưa đăng nhập -> Toast thông báo & Chuyển hướng kèm state location
     if (!userStr) {
-      navigate("/login");
+      toast.info("この機能を使用するにはログインが必要です。");
+      navigate("/login", { state: { from: location } });
       return;
     }
 
@@ -111,8 +125,10 @@ export default function Schedule() {
     try {
       if (isLiked) {
         await unlikeDayPlan(user._id, planId);
+        toast.success("お気に入りから削除しました");
       } else {
         await likeDayPlan(user._id, planId);
+        toast.success("お気に入りに追加しました");
       }
 
       setLikedPlans((prev) => ({
@@ -129,6 +145,7 @@ export default function Schedule() {
       );
     } catch (err) {
       console.error(err);
+      toast.error("エラーが発生しました");
     }
   };
 
@@ -137,42 +154,20 @@ export default function Schedule() {
     let price_max = null;
 
     switch (priceRange) {
-      case "free":
-        price_min = 0;
-        price_max = 0;
-        break;
-      case "0-150k":
-        price_min = 0;
-        price_max = 15000;
-        break;
-      case "150k-600k":
-        price_min = 150000;
-        price_max = 600000;
-        break;
-      case "250k-1m":
-        price_min = 250000;
-        price_max = 1000000;
-        break;
-      case "1m+":
-        price_min = 1000000;
-        price_max = null;
-        break;
-      default:
-        break;
+      case "free": price_min = 0; price_max = 0; break;
+      case "0-150k": price_min = 0; price_max = 15000; break;
+      case "150k-600k": price_min = 150000; price_max = 600000; break;
+      case "250k-1m": price_min = 250000; price_max = 1000000; break;
+      case "1m+": price_min = 1000000; price_max = null; break;
+      default: break;
     }
 
     let age_min = null;
     let age_max = null;
 
     switch (ageRange) {
-      case "0-5":
-        age_min = 0;
-        age_max = 5;
-        break;
-      case "6-12":
-        age_min = 6;
-        age_max = 12;
-        break;
+      case "0-5": age_min = 0; age_max = 5; break;
+      case "6-12": age_min = 6; age_max = 12; break;
     }
 
     setAppliedFilters({
@@ -287,7 +282,7 @@ export default function Schedule() {
                       <div className="flex items-center">
                         <button
                           onClick={() => handleToggleLike(plan.id)}
-                          className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-black rounded-full"
+                          className="flex items-center gap-2 px-3 py-2 bg-white border-2 border-black rounded-full transition-transform hover:scale-110 active:scale-95"
                         >
                           {likedPlans[plan.id] ? (
                             <FavoriteIcon sx={{ color: "#f44336" }} />
@@ -323,24 +318,20 @@ export default function Schedule() {
 
                       {/* Info Tags */}
                       <div className="space-y-2 mb-4">
-                        {/* <div className="flex items-center gap-1 text-sm text-gray-500">
-                          <MapPin size={14} className="text-[#5BC0EB]" />
-                          <span>{plan.province?.[0] || '未設定'} · {plan.area?.[0] || '未設定'}</span>
-                        </div> */}
                         <div className="flex flex-col gap-2">
-                          <span className="badge badge-green w-fit">
-                            <Banknote size={12} />
+                          <span className="badge badge-green w-fit flex items-center gap-1">
+                            <Banknote size={14} />
                             {plan.price_range || "料金未設定"}
                           </span>
 
-                          <span className="badge badge-orange w-fit">
-                            <Users size={12} />
+                          <span className="badge badge-orange w-fit flex items-center gap-1">
+                            <Users size={14} />
                             {plan.age || "全年齢"}
                           </span>
 
                           {plan.note && (
-                            <span className="badge badge-orange w-fit">
-                              <StickyNote size={12} />
+                            <span className="badge badge-orange w-fit flex items-center gap-1">
+                              <StickyNote size={14} />
                               {plan.note}
                             </span>
                           )}
@@ -362,42 +353,14 @@ export default function Schedule() {
               </div>
             )}
 
-            {/* Pagination */}
+            {/* 5. Pagination Control - Thay thế phân trang cũ */}
             {totalPages > 1 && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <button
-                  onClick={() => handlePageChange(Math.max(1, page - 1))}
-                  disabled={page === 1}
-                  className="w-10 h-10 bg-white border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-                >
-                  <ChevronLeft size={20} />
-                </button>
-
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => handlePageChange(pageNum)}
-                      className={`w-10 h-10 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all ${
-                        page === pageNum
-                          ? "bg-[#5BC0EB] text-white"
-                          : "bg-white text-black"
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  )
-                )}
-
-                <button
-                  onClick={() =>
-                    handlePageChange(Math.min(totalPages, page + 1))
-                  }
-                  disabled={page === totalPages}
-                  className="w-10 h-10 bg-white border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[3px_3px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center"
-                >
-                  <ChevronRight size={20} />
-                </button>
+              <div className="pt-8 pb-4">
+                <PaginationControl
+                  page={page}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
               </div>
             )}
           </div>
@@ -433,7 +396,9 @@ export default function Schedule() {
 
                   {/* Province/Area */}
                   <div>
-                    <h3 className="font-black mb-2 text-sm">フィルター</h3>
+                    <h3 className="font-black mb-2 text-sm flex items-center gap-2">
+                       <MapPin size={18} /> エリア
+                    </h3>
                     <div className="space-y-2">
                       <div className="relative">
                         <select
@@ -474,7 +439,10 @@ export default function Schedule() {
 
                   {/* Price Range */}
                   <div>
-                    <h3 className="font-black mb-2 text-sm">💰 料金範囲</h3>
+                    {/* 6. Thay icon 💰 bằng Banknote */}
+                    <h3 className="font-black mb-2 text-sm flex items-center gap-2">
+                      <Banknote size={18} /> 料金範囲
+                    </h3>
                     <div className="space-y-1">
                       <RadioOption
                         value="all"
@@ -519,7 +487,10 @@ export default function Schedule() {
 
                   {/* Age Range */}
                   <div>
-                    <h3 className="font-black mb-2 text-sm">👨‍👩‍👧‍👦 対象年齢</h3>
+                    {/* 7. Thay icon 👨‍👩‍👧‍👦 bằng icon Baby (Neo-Brutalism style) */}
+                    <h3 className="font-black mb-2 text-sm flex items-center gap-2">
+                      <Baby size={18} strokeWidth={2.5} /> 対象年齢
+                    </h3>
                     <div className="space-y-1">
                       <RadioOption
                         value="all"

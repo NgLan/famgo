@@ -7,7 +7,7 @@ import {
 import { MapContainer, TileLayer, Marker, Popup, Polyline } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import {Navigation} from "lucide-react";
+import { Navigation } from "lucide-react";
 // Import MUI Icons
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import FavoriteBorderIcon from "@mui/icons-material/FavoriteBorder";
@@ -24,7 +24,9 @@ import GroupIcon from "@mui/icons-material/Group";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 
-import { useNavigate, useParams } from "react-router-dom";
+// 1. Thêm useLocation và toast
+import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { toast } from "react-toastify";
 import axios from "axios";
 import TimelineCard from "../../components/location-card";
 import { getCookie } from '../../helpers/cookies.helper';
@@ -76,6 +78,8 @@ const greenIcon = new L.Icon({
 
 function ScheduleDetail() {
   const navigate = useNavigate();
+  // 2. Lấy location
+  const location = useLocation();
   const { id } = useParams();
   const [scheduleData, setScheduleData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -343,7 +347,7 @@ function ScheduleDetail() {
     // Không set `origin` để Google tự lấy vị trí hiện tại
     // `destination` là điểm cuối cùng
     // `waypoints` là các điểm từ 1 đến N-1 (bao gồm cả điểm đầu tiên trong list)
-    
+
     const destination = coords[coords.length - 1]; // Điểm cuối cùng
     let url = `https://www.google.com/maps/dir/?api=1&destination=${destination}`;
 
@@ -363,6 +367,36 @@ function ScheduleDetail() {
     .filter(p => p.location?.coordinates?.length === 2)
     .map(p => [p.location.coordinates[1], p.location.coordinates[0]]);
   // ----------------------------------------
+
+  // 4. Logic Toggle Like
+  const handleToggleLike = async () => {
+    const userStr = getCookie('user');
+    
+    // Nếu chưa đăng nhập
+    if (!userStr) {
+      toast.info("この機能を使用するにはログインが必要です。");
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    const user = JSON.parse(userStr);
+    try {
+      if (liked) {
+        await unlikeDayPlan(user._id, id);
+        setLiked(false);
+        setLikesCount((c) => Math.max(0, c - 1));
+        toast.success("お気に入りから削除しました");
+      } else {
+        await likeDayPlan(user._id, id);
+        setLiked(true);
+        setLikesCount((c) => c + 1);
+        toast.success("お気に入りに追加しました");
+      }
+    } catch (err) {
+      console.error('Like toggle error', err);
+      toast.error("エラーが発生しました");
+    }
+  };
 
   if (loading) {
     return (
@@ -412,26 +446,7 @@ function ScheduleDetail() {
           </div>
 
           <button
-            onClick={async () => {
-              const userStr = getCookie('user');
-              if (!userStr) {
-                return navigate('/login');
-              }
-              const user = JSON.parse(userStr);
-              try {
-                if (liked) {
-                  await unlikeDayPlan(user._id, id);
-                  setLiked(false);
-                  setLikesCount((c) => Math.max(0, c - 1));
-                } else {
-                  await likeDayPlan(user._id, id);
-                  setLiked(true);
-                  setLikesCount((c) => c + 1);
-                }
-              } catch (err) {
-                console.error('Like toggle error', err);
-              }
-            }}
+            onClick={handleToggleLike} // Sử dụng hàm đã tách riêng
             className="flex items-center gap-2 px-6 py-2 bg-white border-2 border-black rounded-full shadow-[2px_2px_0_0_#000] hover:bg-red-50 active:translate-y-1 active:shadow-none transition-all"
           >
             {liked ? <FavoriteIcon sx={{ color: "#f44336" }} /> : <FavoriteBorderIcon />}
@@ -613,12 +628,20 @@ function ScheduleDetail() {
                 <WarningAmberIcon sx={{ color: '#ed6c02' }} /> 注意
               </h3>
               <div className="space-y-3">
-                {scheduleData.warnings.map((warning, index) => (
-                  <div key={index} className="bg-[#FFF3E0] border border-[#ED6C02] rounded-lg p-3">
-                    <div className="font-black text-sm text-[#E65100]">{warning.location}</div>
-                    <div className="text-xs text-[#E65100] mt-1">{warning.note}</div>
+                {/* Kiểm tra nếu có warnings và độ dài > 0 */}
+                {scheduleData.warnings && scheduleData.warnings.length > 0 ? (
+                  scheduleData.warnings.map((warning, index) => (
+                    <div key={index} className="bg-[#FFF3E0] border border-[#ED6C02] rounded-lg p-3">
+                      <div className="font-black text-sm text-[#E65100]">{warning.location}</div>
+                      <div className="text-xs text-[#E65100] mt-1">{warning.note}</div>
+                    </div>
+                  ))
+                ) : (
+                  /* Trường hợp không có warning nào */
+                  <div className="text-gray-500 font-bold text-sm text-center py-4">
+                    その旅行にはメモがなかった。
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
@@ -653,10 +676,6 @@ function ScheduleDetail() {
                         place.location.coordinates.length === 2
                       )
                       .map((place, index, array) => {
-                        // Logic chọn icon:
-                        // - Điểm đầu tiên (index === 0): Màu xanh lá (greenIcon)
-                        // - Điểm cuối cùng (index === array.length - 1): Màu đỏ (redIcon)
-                        // - Các điểm còn lại: Màu mặc định (defaultIcon)
                         let icon = defaultIcon;
                         if (index === 0) icon = greenIcon;
                         else if (index === array.length - 1) icon = redIcon;

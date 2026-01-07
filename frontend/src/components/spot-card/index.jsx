@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Heart, Star, Banknote } from 'lucide-react'; // Thay Banknote
+import { Heart, Star, Banknote } from 'lucide-react';
 import { getCookie } from '../../helpers/cookies.helper';
 import { addFavoritePlace, removeFavoritePlace, checkFavoritePlace } from '../../services/favorite.services';
 

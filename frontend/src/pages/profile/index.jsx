@@ -6,10 +6,11 @@ import {
   Calendar,
   LogOut,
   MapPin,
-  Frown
+  Frown,
+  AlertTriangle // Import icon cảnh báo
 } from 'lucide-react';
 import { getCookie, deleteCookie } from '../../helpers/cookies.helper';
-import { getFavoritePlaces, getFavoritePlans, removeFavoritePlace, unlikeDayPlan } from '../../services/favorite.services';
+import { getFavoritePlaces, getFavoritePlans } from '../../services/favorite.services';
 import SpotCard from '../../components/spot-card';
 import PlanCard from '../../components/plan-card';
 import PaginationControl from '../../components/common/PaginationControl';
@@ -21,6 +22,9 @@ const Profile = () => {
   const activeTab = searchParams.get('tab') === 'plans' ? 'plans' : 'places';
   const fullName = getCookie('fullName');
   const token = getCookie('token');
+
+  // State quản lý Popup xác nhận logout
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Data State
   const [favoriteSpots, setFavoriteSpots] = useState([]);
@@ -40,10 +44,6 @@ const Profile = () => {
     red: '#FF6B6B'
   };
 
-  useEffect(() => {
-    if (!token) navigate('/login');
-  }, [token, navigate]);
-
   const handleSwitchTab = (newTab) => {
     setSearchParams({ tab: newTab });
     setPage(1);
@@ -59,7 +59,6 @@ const Profile = () => {
       const fetchData = async () => {
         try {
           if (activeTab === 'places') {
-            // --- LOGIC PHÂN TRANG CHO PLACES (Giữ nguyên) ---
             const res = await getFavoritePlaces(user_id, page, LIMIT);
             if (res?.data) {
               const spots = res.data.map(f => ({
@@ -70,16 +69,12 @@ const Profile = () => {
               }));
               setFavoriteSpots(spots);
               setTotalPages(res.pagination?.totalPages || 1);
-
               if (spots.length === 0 && page > 1) {
                 setPage(p => p - 1);
               }
             }
           } else {
-            // --- [CẬP NHẬT] LOGIC PHÂN TRANG CHO PLANS ---
-            // 1. Truyền page và LIMIT vào API
             const res = await getFavoritePlans(user_id, page, LIMIT);
-
             if (res?.data) {
               const plans = res.data.map(p => ({
                 id: p.day_plan_id || p._id,
@@ -90,12 +85,7 @@ const Profile = () => {
                 places: p.places || []
               }));
               setFavoritePlans(plans);
-
-              // 2. Cập nhật Total Pages từ API response
-              // (Giả định API trả về cấu trúc pagination giống places: res.pagination.totalPages)
               setTotalPages(res.pagination?.totalPages || 1);
-
-              // 3. Logic tự động lùi trang nếu xóa hết item ở trang hiện tại
               if (plans.length === 0 && page > 1) {
                 setPage(p => p - 1);
               }
@@ -111,11 +101,18 @@ const Profile = () => {
     }
   }, [token, activeTab, page, refreshTrigger]);
 
-  const handleLogout = () => {
+  // 1. Khi nhấn Logout, chỉ hiện popup xác nhận
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  // 2. Nếu xác nhận Logout thật thì mới xóa cookie và chuyển trang
+  const confirmLogout = () => {
     deleteCookie('token');
     deleteCookie('fullName');
     deleteCookie('user');
-    navigate('/login');
+    setShowLogoutConfirm(false);
+    navigate('/');
   };
 
   const triggerReload = () => {
@@ -131,7 +128,6 @@ const Profile = () => {
           <div className="md:col-span-3">
             <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[6px_6px_0_0_#000] sticky top-8 flex flex-col h-[calc(100vh-100px)]">
 
-              {/* Avatar Info */}
               <div className="flex flex-col items-center mb-8 mt-4">
                 <div className="w-24 h-24 rounded-full border-2 border-black overflow-hidden mb-3 shadow-[4px_4px_0_0_#000]">
                   <div className="w-full h-full bg-[#5BC0EB] flex items-center justify-center">
@@ -141,7 +137,6 @@ const Profile = () => {
                 <h2 className="text-xl font-black text-center text-black tracking-tight">{fullName || 'Guest User'}</h2>
               </div>
 
-              {/* Navigation Menu */}
               <nav className="flex flex-col gap-4 flex-1">
                 <button
                   onClick={() => handleSwitchTab('places')}
@@ -167,7 +162,7 @@ const Profile = () => {
               </nav>
 
               <button
-                onClick={handleLogout}
+                onClick={handleLogoutClick} // Đổi sự kiện thành mở popup
                 className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold text-red-600 hover:bg-red-50 transition-all shadow-[2px_2px_0_0_#000] active:translate-y-[1px] active:shadow-none"
               >
                 <LogOut size={18} />
@@ -215,7 +210,6 @@ const Profile = () => {
               )}
             </div>
 
-            {/* --- [SỬA ĐỔI] HIỂN THỊ PHÂN TRANG CHO CẢ 2 TAB --- */}
             {totalPages > 1 && (
               <PaginationControl
                 page={page}
@@ -227,6 +221,40 @@ const Profile = () => {
 
         </div>
       </div>
+
+      {/* --- CONFIRM LOGOUT MODAL --- */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white border-2 border-black rounded-xl p-6 w-full max-w-sm shadow-[8px_8px_0_0_#000] relative animate-in zoom-in-95 duration-200">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mb-4 border-2 border-black">
+                <AlertTriangle size={32} className="text-red-600" />
+              </div>
+              
+              <h3 className="text-xl font-black mb-2">ログアウトしますか？</h3>
+              <p className="text-gray-600 mb-6 font-medium">
+                ログアウトすると、マイページやお気に入り機能が利用できなくなります。
+              </p>
+
+              <div className="flex gap-4 w-full">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 px-4 border-2 border-black rounded-lg font-bold hover:bg-gray-100 transition-colors"
+                >
+                  キャンセル
+                </button>
+                <button
+                  onClick={confirmLogout}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:shadow-[4px_4px_0_0_#000] hover:translate-x-[-1px] hover:translate-y-[-1px] transition-all"
+                >
+                  ログアウト
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

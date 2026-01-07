@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import {
   Box,
   Container,
@@ -14,8 +14,12 @@ import { toast } from 'react-toastify';
 import { login } from '../../services/user.services';
 import { setCookie } from '../../helpers/cookies.helper';
 import Header from '../../components/header';
+
 function Login() {
   const navigate = useNavigate();
+  // 2. Khởi tạo location để nhận dữ liệu từ trang trước gửi sang
+  const location = useLocation();
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -28,12 +32,14 @@ function Login() {
     try {
       if (!email || !password) {
         toast.error('メールアドレスとパスワードを入力してください');
+        setLoading(false);
         return;
       }
 
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         toast.error('メールアドレスの形式が正しくありません');
+        setLoading(false);
         return;
       }
 
@@ -59,9 +65,26 @@ function Login() {
 
         toast.success('ログインに成功しました。');
 
+        // Logic quay lại trang cũ an toàn hơn
+        const stateFrom = location.state?.from;
+        let destination = '/';
+
+        if (stateFrom) {
+            // Trường hợp 1: stateFrom là object { pathname, search } (Do ta vừa sửa ở SearchPage)
+            if (typeof stateFrom === 'object' && stateFrom.pathname) {
+                destination = `${stateFrom.pathname}${stateFrom.search || ''}`;
+            } 
+            // Trường hợp 2: stateFrom là string (Các trang cũ có thể vẫn gửi string)
+            else if (typeof stateFrom === 'string') {
+                destination = stateFrom;
+            }
+        }
+
         setTimeout(() => {
-          navigate('/');
+          navigate(destination, { replace: true });
         }, 1000);
+        // -----------------------------------------------
+
       } else {
         toast.error(response?.message || 'ログインに失敗しました。入力内容をご確認ください。');
       }

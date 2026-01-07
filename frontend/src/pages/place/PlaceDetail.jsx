@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+// 1. Thêm import useLocation
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import {
   MapPin,
@@ -34,10 +35,12 @@ const COLORS = {
   red: '#FF6B6B'
 };
 
-// Component chính
 const PlaceDetail = () => {
-  const { id } = useParams(); // Lấy ID địa điểm từ URL
+  const { id } = useParams();
   const navigate = useNavigate();
+  // 2. Lấy location
+  const location = useLocation();
+  
   const [placeData, setPlaceData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -45,36 +48,28 @@ const PlaceDetail = () => {
   const [openReviewDialog, setOpenReviewDialog] = useState(false);
   const [refreshStatsKey, setRefreshStatsKey] = useState(0);
 
-  // Lấy dữ liệu
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const detailResponse = await axios.get(
-          `${API_URL}/api/places/${id}`
-        );
+        const detailResponse = await axios.get(`${API_URL}/api/places/${id}`);
         const respData = detailResponse.data;
         const place = respData?.data || respData;
 
         setPlaceData(place);
 
-        // Nếu đã đăng nhập, kiểm tra trạng thái favorite
         try {
           const userStr = getCookie("user");
           if (userStr) {
             const user = JSON.parse(userStr);
             const chk = await checkFavoritePlace(user._id, id);
-            if (
-              chk &&
-              chk.data &&
-              typeof chk.data.is_favorite !== "undefined"
-            ) {
+            if (chk && chk.data && typeof chk.data.is_favorite !== "undefined") {
               setIsFavorite(!!chk.data.is_favorite);
             }
           }
         } catch {
-          toast.error("お気に入りの確認に失敗しました。");
+          // Silent fail or warning
         }
       } catch {
         toast.error("詳細情報の取得中にエラーが発生しました。");
@@ -86,53 +81,31 @@ const PlaceDetail = () => {
     fetchData();
   }, [id]);
 
-  if (loading)
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: COLORS.bg }}>
-        <div className="text-xl font-bold">読み込み中...</div>
-      </div>
-    );
-  if (error)
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: COLORS.bg }}>
-        <div className="text-xl font-bold text-red-600">{error}</div>
-      </div>
-    );
-  if (!placeData) return null;
+  // ... (giữ nguyên fetchReviews, handle render loading/error)
 
-  // Dữ liệu chính:
-  const {
-    name,
-    rating,
-    total_reviews,
-    images,
-    price_range,
-    address,
-    description,
-    related_places,
-    age_limit,
-    location,
-  } = placeData;
-
-  // Helper function to reload reviews
   const fetchReviews = async () => {
     try {
-      await axios.get(
-        `${API_URL}/api/reviews/place/${id}?limit=2`
-      );
-      // Refresh stats box khi review được submit/update
+      await axios.get(`${API_URL}/api/reviews/place/${id}?limit=2`);
       setRefreshStatsKey((prev) => prev + 1);
     } catch {
       toast.error("レビューの読み込みに失敗しました。");
-      //   console.error("Error loading reviews:", _err);
     }
   };
+
+  if (loading) return <div className="min-h-screen flex items-center justify-center">読み込み中...</div>;
+  if (error) return <div className="min-h-screen flex items-center justify-center text-red-600">{error}</div>;
+  if (!placeData) return null;
+
+  const {
+    name, rating, total_reviews, images, price_range,
+    address, description, related_places, age_limit, location: placeLocation,
+  } = placeData;
 
   return (
     <div className="min-h-screen pb-10 pt-8 font-sans" style={{ backgroundColor: COLORS.bg }}>
       <div className="max-w-[1400px] mx-auto px-4">
-
-        {/* Back Button */}
+        {/* ... (Các phần hiển thị Header, Image, Content giữ nguyên) */}
+        
         <button
           onClick={() => navigate(-1)}
           className="flex items-center gap-2 mb-6 px-4 py-2 bg-white border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all"
@@ -141,12 +114,10 @@ const PlaceDetail = () => {
           <span>戻る</span>
         </button>
 
-        {/* Title and Rating Section */}
         <div className="mb-6">
-          <h1 className="text-3xl md:text-4xl font-black mb-3 tracking-tight">{name}</h1>
-
-          <div className="flex flex-wrap items-center gap-4">
-            {/* Rating */}
+           <h1 className="text-3xl md:text-4xl font-black mb-3 tracking-tight">{name}</h1>
+           {/* ... (Rating section giữ nguyên) */}
+             <div className="flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
               <div className="flex items-center">
                 {rating > 0 ? (
@@ -164,8 +135,6 @@ const PlaceDetail = () => {
               <span className="font-bold text-lg">{rating > 0 ? Number(rating).toFixed(1) : "N/A"}</span>
               <span className="text-gray-600">({total_reviews || 0} レビュー)</span>
             </div>
-
-            {/* Address */}
             <div className="flex items-center gap-2 text-gray-700">
               <MapPin size={20} />
               <span>{address || "住所情報なし"}</span>
@@ -173,28 +142,21 @@ const PlaceDetail = () => {
           </div>
         </div>
 
-        {/* Main Layout - 2 Columns */}
         <div className="flex flex-col md:flex-row gap-6">
-
-          {/* Left Column - Main Content */}
+          {/* Left Column */}
           <div className="flex-1 min-w-0">
-
-            {/* Main Image */}
-            <div className="relative w-full h-[350px] md:h-[500px] rounded-xl border-2 border-black shadow-[6px_6px_0_0_#000] overflow-hidden bg-white mb-6">
+             <div className="relative w-full h-[350px] md:h-[500px] rounded-xl border-2 border-black shadow-[6px_6px_0_0_#000] overflow-hidden bg-white mb-6">
               <img
                 src={images && images.length > 0 ? images[0].url : "https://via.placeholder.com/800x450?text=No+Image"}
                 alt={name}
                 className="w-full h-full object-cover"
               />
             </div>
-
-            {/* Description */}
             <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000] mb-6" style={{ backgroundColor: '#FFF0F9' }}>
               <h2 className="text-2xl font-black mb-3">詳細説明</h2>
               <p className="text-gray-700 leading-relaxed">{description}</p>
             </div>
-
-            {/* Reviews Section */}
+            
             <div className="bg-white border-2 border-black rounded-xl p-6 shadow-[4px_4px_0_0_#000]" style={{ backgroundColor: '#F0F9FF' }}>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-2xl font-black">レビュー</h2>
@@ -202,7 +164,9 @@ const PlaceDetail = () => {
                   onClick={() => {
                     const userStr = getCookie("user");
                     if (!userStr) {
-                      toast.warning("レビューを書くにはログインしてください");
+                      toast.info("レビューを書くにはログインが必要です。");
+                      // Cũng điều hướng login tại đây nếu muốn
+                       navigate("/login", { state: { from: location } });
                       return;
                     }
                     setOpenReviewDialog(true);
@@ -213,30 +177,22 @@ const PlaceDetail = () => {
                   評価する
                 </button>
               </div>
-
-              {/* Review Stats */}
               <div className="mb-6">
                 <ReviewStatsSection placeId={id} refreshTrigger={refreshStatsKey} />
               </div>
-
               <div className="border-t-2 border-black my-6"></div>
-
-              {/* Comments */}
               <CommentSection placeId={id} placeName={name} />
             </div>
           </div>
 
-          {/* Right Column - Sidebar */}
+          {/* Right Column (Sidebar) */}
           <div className="w-full md:w-[380px] flex-shrink-0">
             <div className="md:sticky md:top-4 space-y-4">
-
-              {/* Basic Info Card */}
               <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
-                <h3 className="text-lg font-black mb-3">基本情報</h3>
+                {/* ... (Thông tin giá, giờ, tuổi giữ nguyên) */}
+                 <h3 className="text-lg font-black mb-3">基本情報</h3>
                 <div className="border-t-2 border-black mb-3"></div>
-
                 <div className="space-y-3">
-                  {/* Price */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.pink }}>
                       <DollarSign size={20} />
@@ -246,9 +202,7 @@ const PlaceDetail = () => {
                       <div className="font-bold">{price_range || "詳細はお問い合わせください"}</div>
                     </div>
                   </div>
-
-                  {/* Opening Hours */}
-                  <div className="flex items-center gap-3">
+                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.blue }}>
                       <Clock size={20} />
                     </div>
@@ -257,8 +211,6 @@ const PlaceDetail = () => {
                       <div className="font-bold">8:00 - 18:00</div>
                     </div>
                   </div>
-
-                  {/* Age Range */}
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center" style={{ backgroundColor: COLORS.yellow }}>
                       <Users size={20} />
@@ -270,8 +222,6 @@ const PlaceDetail = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Address */}
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-lg border-2 border-black flex items-center justify-center flex-shrink-0" style={{ backgroundColor: COLORS.pink }}>
                       <MapPin size={20} />
@@ -285,12 +235,14 @@ const PlaceDetail = () => {
 
                 <div className="border-t-2 border-black my-3"></div>
 
-                {/* Favorite Button */}
+                {/* 3. Logic nút tim (Sửa đổi) */}
                 <button
                   onClick={async () => {
                     const userStr = getCookie("user");
                     if (!userStr) {
-                      toast.warning("この機能を使用するにはログインしてください");
+                      toast.info("この機能を使用するにはログインが必要です。");
+                      // Chuyển hướng kèm state location
+                      navigate("/login", { state: { from: location } });
                       return;
                     }
                     const user = JSON.parse(userStr);
@@ -327,22 +279,22 @@ const PlaceDetail = () => {
                 </button>
               </div>
 
-              {/* Map Card */}
-              <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
+              {/* Map section giữ nguyên */}
+               <div className="bg-white border-2 border-black rounded-xl p-4 shadow-[4px_4px_0_0_#000]">
                 <h3 className="text-lg font-black mb-3">地図上の場所</h3>
                 <div className="h-[220px] w-full rounded-lg border-2 border-black overflow-hidden mb-3">
-                  {location?.coordinates ? (
+                  {placeLocation?.coordinates ? (
                     <MapContainer
-                      center={[location.coordinates[1], location.coordinates[0]]}
+                      center={[placeLocation.coordinates[1], placeLocation.coordinates[0]]}
                       zoom={14}
                       style={{ height: "100%", width: "100%" }}
-                      key={location.coordinates[0]}
+                      key={placeLocation.coordinates[0]}
                     >
                       <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution="&copy; OpenStreetMap contributors"
                       />
-                      <Marker position={[location.coordinates[1], location.coordinates[0]]}>
+                      <Marker position={[placeLocation.coordinates[1], placeLocation.coordinates[0]]}>
                         <Popup>{name}</Popup>
                       </Marker>
                     </MapContainer>
@@ -352,10 +304,10 @@ const PlaceDetail = () => {
                     </div>
                   )}
                 </div>
-                {location?.coordinates && (
+                {placeLocation?.coordinates && (
                   <button
                     onClick={() => {
-                      const [lng, lat] = location.coordinates;
+                      const [lng, lat] = placeLocation.coordinates;
                       window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
                     }}
                     className="w-full flex items-center justify-center gap-2 px-4 py-3 border-2 border-black rounded-lg font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[4px_4px_0_0_#000] transition-all group"
@@ -368,12 +320,11 @@ const PlaceDetail = () => {
                   </button>
                 )}
               </div>
-
             </div>
           </div>
         </div>
 
-        {/* Related Places Section - Full Width */}
+        {/* Related Places Section giữ nguyên */}
         <div className="mt-12">
           <h2 className="text-2xl md:text-3xl font-black mb-6">関連スポット</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -384,7 +335,7 @@ const PlaceDetail = () => {
                 className="bg-white border-2 border-black rounded-xl overflow-hidden shadow-[4px_4px_0_0_#000] cursor-pointer hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[6px_6px_0_0_#000] transition-all"
                 style={{ backgroundColor: index % 3 === 0 ? '#FFF9F0' : index % 3 === 1 ? '#FFF0F9' : '#F0F9FF' }}
               >
-                <div className="aspect-[4/3] overflow-hidden">
+               <div className="aspect-[4/3] overflow-hidden">
                   <img
                     src={place.thumbnail || "https://via.placeholder.com/200x150"}
                     alt={place.name}
@@ -395,9 +346,7 @@ const PlaceDetail = () => {
                   <h3 className="font-bold text-sm mb-2 line-clamp-2 min-h-[40px]">
                     {place.name}
                   </h3>
-
-                  {/* Rating */}
-                  <div className="flex items-center gap-1 mb-2">
+                   <div className="flex items-center gap-1 mb-2">
                     {place.rating > 0 ? (
                       <>
                         {[...Array(5)].map((_, index) => (
@@ -413,7 +362,6 @@ const PlaceDetail = () => {
                       <span className="text-xs text-gray-500">評価なし</span>
                     )}
                   </div>
-
                   <div className="text-xs text-gray-600 truncate">
                     {place.price_range}
                   </div>
@@ -423,7 +371,6 @@ const PlaceDetail = () => {
           </div>
         </div>
 
-        {/* Review Dialog */}
         <ReviewDialog
           open={openReviewDialog}
           onClose={() => setOpenReviewDialog(false)}
